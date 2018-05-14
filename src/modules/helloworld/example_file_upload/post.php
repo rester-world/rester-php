@@ -1,7 +1,9 @@
 <?php if(!defined('__RESTER__')) exit;
 
+use Rester\File\FileUpload;
+
 // 파일 업로드 처리
-$f = new fileUpload('fname');
+$f = new FileUpload('fname');
 $files = $f->run();
 
 $body = cfg::Get('response_body_skel');
@@ -24,7 +26,7 @@ foreach ($files as $file)
     $body['data'][] = 'MIME : '.$file->file_type();
     $body['data'][] = '업로드 시각 : '.$file->file_datetime();
     $body['data'][] = '----------------------------------------';
-    //$file->delete();
+    //$file->delete(); // 파일을 삭제함
 }
 
 echo json_encode($body);

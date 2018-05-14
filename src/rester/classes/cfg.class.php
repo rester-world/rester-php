@@ -1,4 +1,5 @@
 <?php
+use \Rester\Exception\ExceptionBase;
 /**
  *	@class		cfg
  *	@author	Kevin Park (kevinpark<>webace.co.kr)
@@ -49,26 +50,29 @@ class cfg
 
     /**
      * 기본정보 초기화
+     *
+     * @throws ExceptionBase
      */
     private static function init()
     {
         // 환경설정 파일 로드
-        $cfg = parse_ini_file(dirname(__FILE__).'/../../../cfg/'.self::$name,true, INI_SCANNER_TYPED);
+        $path = dirname(__FILE__).'/../../../cfg/'.self::$name;
+        if(is_file($path)) $cfg = parse_ini_file($path,true, INI_SCANNER_TYPED);
+        else throw new ExceptionBase("환경설정 파일이 없습니다.(rester.ini");
 
         // 기본값 설정
         foreach (self::$default as $k=>$v)
         {
-            foreach ($v as $kk=>$vv) {
-                if(!isset($cfg[$k][$kk])) $cfg[$k][$kk] = $vv;
+            foreach ($v as $kk => $vv)
+            {
+                if (!isset($cfg[$k][$kk])) $cfg[$k][$kk] = $vv;
             }
         }
 
         if($cfg['access_control']['allows_origin']!='*') $cfg['access_control']['allows_origin'] = explode(',', $cfg['access_control']['allows_origin']);
         $cfg['access_control']['allows_headers'] = explode(',', $cfg['access_control']['allows_headers']);
         $cfg['access_control']['allows_method'] = explode(',', $cfg['access_control']['allows_method']);
-        array_walk_recursive($cfg, function(&$v) {
-            $v = trim($v);
-        });
+        array_walk_recursive($cfg, function(&$v) { $v = trim($v); });
 
 
         // 버전명 검사
@@ -80,13 +84,15 @@ class cfg
         {
             if($_GET[self::query_version]=='')
             {
-                rester::set_response_code(400);
-                rester::error('최상위 폴더로는 접근이 불가합니다.');
+                throw new ExceptionBase("최상위 폴더로는 접근이 불가합니다.");
+                //rester::set_response_code(400);
+                //rester::error('최상위 폴더로는 접근이 불가합니다.');
             }
             else
             {
-                rester::set_response_code(400);
-                rester::error('버전명이 잘못되었습니다.');
+                throw new ExceptionBase("버전명이 잘못되었습니다.");
+                //rester::set_response_code(400);
+                //rester::error('버전명이 잘못되었습니다.');
             }
         }
 
@@ -97,8 +103,9 @@ class cfg
         }
         else
         {
-            rester::set_response_code(400);
-            rester::error('모듈명이 잘못되었습니다.');
+            throw new ExceptionBase("모듈명이 잘못되었습니다.");
+            //rester::set_response_code(400);
+            //rester::error('모듈명이 잘못되었습니다.');
         }
 
         // 프로시저명 검사
@@ -108,8 +115,9 @@ class cfg
         }
         else
         {
-            rester::set_response_code(400);
-            rester::error('프로시저명이 잘못되었습니다.');
+            throw new ExceptionBase("프로시저명이 잘못되었습니다.");
+            //rester::set_response_code(400);
+            //rester::error('프로시저명이 잘못되었습니다.');
         }
 
         // 허용 method 검사
@@ -119,8 +127,9 @@ class cfg
         }
         else
         {
-            rester::set_response_code(400);
-            rester::error('METHOD 형식이 잘못되었습니다.');
+            throw new ExceptionBase("METHOD 형식이 잘못되었습니다.");
+            //rester::set_response_code(400);
+            //rester::error('METHOD 형식이 잘못되었습니다.');
         }
 
         // check allows ip address
@@ -133,8 +142,9 @@ class cfg
 
             if(!in_array(GetRealIPAddr(),$cfg['access_control']['allows_origin']))
             {
-                rester::set_response_code(401);
-                rester::error('접근권한이 없습니다.');
+                throw new ExceptionBase("접근권한이 없습니다.");
+                //rester::set_response_code(401);
+                //rester::error('접근권한이 없습니다.');
             }
         }
 
@@ -164,10 +174,28 @@ class cfg
         self::$data = $cfg;
     }
 
-    // 환경설정값 반환
+    /**
+     * 환경설정값 반환
+     *
+     * @param string $section
+     * @param string $key
+     *
+     * @return mixed
+     * @throws ExceptionBase
+     */
     public static function Get($section='', $key='')
     {
-        if(!isset(self::$data)) self::init();
+        if(!isset(self::$data))
+        {
+            try
+            {
+                self::init();
+            }
+            catch (ExceptionBase $e)
+            {
+                throw $e;
+            }
+        }
         if($section==='') return self::$data;
         if($section && $key) return self::$data[$section][$key];
         return self::$data[$section];

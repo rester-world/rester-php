@@ -22,6 +22,12 @@ spl_autoload_register(function($class_name)
     include_once(dirname(__FILE__).'/classes/'.$class_name.'.class.php');
 });
 
+// catch 되지 않은 예외에 대한 처리함수
+set_exception_handler(function($e) {
+    echo $e;
+    exit;
+});
+
 // 01. Default library include
 include_once(dirname(__FILE__) . '/lib.basic.php');
 

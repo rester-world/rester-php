@@ -1,5 +1,6 @@
 <?php
 namespace Rester\Schema;
+use \Rester\Exception\ExceptionBase;
 /**
  * Class schema
  * kevinpark@webace.co.kr
@@ -7,7 +8,7 @@ namespace Rester\Schema;
  * 스키마 정의를 받아서 validation을 수행해 줌
  *
  */
-class schema
+class Schema
 {
     const TYPE_REGEX = 'regexp';
     const TYPE_FUNCTION = 'function';
@@ -45,8 +46,8 @@ class schema
     public function validate($data, $strict=false)
     {
         // check param
-        if(!is_array($data)) throw new schemaException("1번째 파라미터는 연관배열이 필요합니다.", schemaException::ERR_PARAM);
-        if(!is_bool($strict)) throw new schemaException("2번째 파라미터는 boolean  필요합니다.", schemaException::ERR_PARAM);
+        if(!is_array($data)) throw new ExceptionBase("1번째 파라미터는 연관배열이 필요합니다.");
+        if(!is_bool($strict)) throw new ExceptionBase("2번째 파라미터는 boolean  필요합니다.");
 
         $result = array();
 
@@ -54,7 +55,7 @@ class schema
         {
             if (!isset($this->schema[$k]))
             {
-                if ($strict) throw new schemaException("스키마에 없는 필드입니다.", schemaException::ERR_NO_FIELD);
+                if ($strict) throw new ExceptionBase("스키마에 없는 필드입니다.");
                 continue;
             }
 
@@ -66,7 +67,7 @@ class schema
                 // 정규표현식 사용
                 case self::TYPE_REGEX:
                     if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0];
-                    elseif ($strict) throw new schemaException("데이터가 정규표현식과 맞지 않습니다.", schemaException::ERR_VALIDATE_DATA);
+                    elseif ($strict) throw new ExceptionBase("데이터가 정규표현식과 맞지 않습니다.");
                     break;
 
                 // PHP 기본함수 사용
@@ -79,30 +80,30 @@ class schema
                     eval("\$filter = " . $schema[self::TYPE_FILTER] . ";");
                     if($schema['options']) eval("\$options = " . $schema['options'] . ";");
 
-                    if(!is_integer($filter)) throw new schemaException("필터 형식이 잘못되었습니다.", schemaException::ERR_FILTER_TYPE);
-                    if($options !== null && !is_integer($options)) throw new schemaException("필터 옵션 형식이 잘못되었습니다.", schemaException::ERR_FILTER_TYPE);
+                    if(!is_integer($filter)) throw new ExceptionBase("필터 형식이 잘못되었습니다.");
+                    if($options !== null && !is_integer($options)) throw new ExceptionBase("필터 옵션 형식이 잘못되었습니다.");
 
-                    if ($data = filter_var($data, $filter, $options))
+                    if ($clean = filter_var($v, $filter, $options))
                     {
-                        $result[$k] = $data;
+                        $result[$k] = $clean;
                     }
                     elseif ($strict)
                     {
-                        throw new schemaException("데이터가 필터를 통과하지 못했습니다.", schemaException::ERR_VALIDATE_DATA);
+                        throw new ExceptionBase("데이터가 필터를 통과하지 못했습니다.");
                     }
                     break;
 
                 case self::TYPE_FUNCTION:
                     $func = $this->schema[$k][self::TYPE_FUNCTION];
-                    if (!is_callable($func)) throw new schemaException("호출가능한 함수를 등록하세요.", schemaException::ERR_VALIDATE_DATA);
+                    if (!is_callable($func)) throw new ExceptionBase("호출가능한 함수를 등록하세요.");
 
-                    if ($data = $func($v))
+                    if ($clean = $func($v))
                     {
-                        $result[$k] = $data;
+                        $result[$k] = $clean;
                     }
                     elseif ($strict)
                     {
-                        throw new schemaException("데이터가 사용자정의 함수를 통과하지 못했습니다.", schemaException::ERR_VALIDATE_DATA);
+                        throw new ExceptionBase("데이터가 사용자정의 함수를 통과하지 못했습니다.");
                     }
                     break;
 
@@ -114,7 +115,7 @@ class schema
                     }
                     else
                     {
-                        throw new schemaException("함수가 정의되어 있지 않습니다.", schemaException::ERR_VALIDATE_DATA);
+                        throw new ExceptionBase("함수가 정의되어 있지 않습니다.");
                     }
             }
 
@@ -124,10 +125,11 @@ class schema
 
 
     /**
-     * schema constructor.
+     * Schema constructor.
      *
      * @param mixed $schema json string | json file | array |.ini file path
-     * @throws Exception
+     *
+     * @throws ExceptionBase
      */
     public function __construct($schema)
     {
@@ -144,7 +146,7 @@ class schema
                 $ext = array_pop(explode('.',$schema));
                 if($ext == 'ini') $this->set_schema_file_ini($schema);
                 elseif($ext == 'json') $this->set_schema_file_json($schema);
-                else throw new schemaException("파일형식을 확인해 주세요.", schemaException::ERR_FILE_TYPE);
+                else throw new ExceptionBase("파일형식을 확인해 주세요.");
             }
             // json string
             elseif(($data = json_decode($schema,true)) && (json_last_error() == JSON_ERROR_NONE))
@@ -154,10 +156,10 @@ class schema
             // error : not support
             else
             {
-                throw new schemaException("스키마 지원 형식을 확인해 주세요.", schemaException::ERR_FORMAT);
+                throw new ExceptionBase("스키마 지원 형식을 확인해 주세요.");
             }
         }
-        catch (schemaException $e)
+        catch (ExceptionBase $e)
         {
             throw $e;
         }
@@ -166,6 +168,8 @@ class schema
     /**
      * 스키마를 설정함
      *
+     * @param array $data
+     *
      * 스키마구조
      * ----------
      * key[type] 필수
@@ -173,30 +177,29 @@ class schema
      * key[filter] integer php 함수의 필터값 (type=filter)
      * key[option] integer php 함수의 옵션값 (type=filter)
      *
-     * @param array $data
-     * @throws schemaException
+     * @throws ExceptionBase
      */
     public function set_schema($data)
     {
         // 배열 형식 검사
-        if(!is_array($data)) throw new schemaException("데이터는 배열형식 이어야 합니다.",schemaException::ERR_CONTENT);
+        if(!is_array($data)) throw new ExceptionBase("데이터는 배열형식 이어야 합니다.");
 
         foreach ($data as $k=>$v)
         {
             // 키값 형식 검사
-            if(!is_string($k)) throw new schemaException("필드 키값은 문자열입니다.",schemaException::ERR_CONTENT);
+            if(!is_string($k)) throw new ExceptionBase("필드 키값은 문자열입니다.");
 
             // 필드타입에 따라 옵션으로 필수로 받는 내용이 달라진다.
             switch ($v['type'])
             {
                 case self::TYPE_REGEX:
-                    if(!isset($v[self::TYPE_REGEX])) throw new schemaException("[regexp = 정규식] 필수 사항입니다.",schemaException::ERR_CONTENT);
+                    if(!isset($v[self::TYPE_REGEX])) throw new ExceptionBase("[regexp = 정규식] 필수 사항입니다.");
                     break;
                 case self::TYPE_FILTER:
-                    if(!isset($v[self::TYPE_FILTER])) throw new schemaException("[filter = 필터명] 필수 사항입니다.",schemaException::ERR_CONTENT);
+                    if(!isset($v[self::TYPE_FILTER])) throw new ExceptionBase("[filter = 필터명] 필수 사항입니다.");
                     break;
                 default:
-                    if(!in_array($v['type'], $this->types)) throw new schemaException("지원되지 않는 type 값입니다. ({$v['type']})",schemaException::ERR_CONTENT);
+                    if(!in_array($v['type'], $this->types)) throw new ExceptionBase("지원되지 않는 type 값입니다. ({$v['type']})");
             }
         }
         $this->schema = $data;
@@ -206,7 +209,8 @@ class schema
      * insert json string schema
      *
      * @param string $json_string
-     * @throws schemaException
+     *
+     * @throws ExceptionBase
      */
     public function set_schema_json($json_string)
     {
@@ -214,7 +218,7 @@ class schema
         {
             $this->set_schema(json_decode($json_string,true));
         }
-        catch (schemaException $e)
+        catch (ExceptionBase $e)
         {
             throw $e;
         }
@@ -224,7 +228,8 @@ class schema
      * insert json file schema
      *
      * @param string $file_path
-     * @throws schemaException
+     *
+     * @throws ExceptionBase
      */
     public function set_schema_file_json($file_path)
     {
@@ -232,7 +237,7 @@ class schema
         {
             $this->set_schema(json_decode(file_get_contents($file_path),true));
         }
-        catch (schemaException $e)
+        catch (ExceptionBase $e)
         {
             throw $e;
         }
@@ -242,30 +247,32 @@ class schema
      * insert ini file schema
      *
      * @param string $file_path
-     * @throws schemaException
+     *
+     * @throws ExceptionBase
      */
     public function set_schema_file_ini($file_path)
     {
         try
         {
-            $this->set_schema(parse_ini_file($file_path,true, INI_SCANNER_TYPED));
+            $this->set_schema(parse_ini_file($file_path,true, INI_SCANNER_RAW));
         }
-        catch (schemaException $e)
+        catch (ExceptionBase $e)
         {
             throw $e;
         }
     }
 
     /**
-     * regist anonymous function
+     * anonymous function
      *
      * @param string $key
      * @param callable $function
-     * @throws schemaException
+     *
+     * @throws ExceptionBase
      */
     public function set_schema_func($key, $function)
     {
         if(is_callable($function)) $this->schema[$key]['function'] = $function;
-        else throw new schemaException("2번째 파라미터는 호출 가능한 함수가 여야 합니다.", schemaException::ERR_FUNCTION_TYPE);
+        else throw new ExceptionBase("2번째 파라미터는 호출 가능한 함수여야 합니다.");
     }
 }

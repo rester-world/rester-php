@@ -1,7 +1,8 @@
 <?php
 namespace Rester\File;
+use \cfg;
 /**
- *	@class		file
+ *	@class		File
  *	@author	Kevin Park (kevinpark1981<>gmail.com)
  *	@author	Computer Science in Inje Univ.
  *	@version	1.0	
@@ -9,7 +10,7 @@ namespace Rester\File;
  *	@date		2018.05.10 - 생성
  *
  */
-class file
+class File
 {
     protected $module_name; // 호출 모듈명
     protected $upload_path = 'rester/files'; // 파일 업로드 경로
@@ -36,7 +37,7 @@ class file
     public function __construct($data=null)
     {
         $this->module_name = cfg::Get('module');
-        if(!$this->module_name) throw new RequireModuleName("모듈 이름이 정의되지 않았습니다.", RequireModuleName::ERR_MODULE_NAME);
+        if(!$this->module_name) throw new RequireModuleName();
 
         if(null !== ($v = cfg::Get('file','upload_path'))) $this->upload_path = $v;
         if(null !== ($v = cfg::Get('file','path_group'))) $this->path_group = $v;

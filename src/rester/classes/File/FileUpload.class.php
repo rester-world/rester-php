@@ -1,12 +1,13 @@
 <?php
 namespace Rester\File;
+use \cfg;
 /**
- * Class fileUpload
+ * Class FileUpload
  * kevinpark@webace.co.kr
  *
  * 파일 업로드 클래스
  */
-class fileUpload extends RequireModuleName
+class FileUpload extends  File
 {
     protected $form_name;   // 폼이름
     protected $max_count = 5;   // 최대파일 업로드 개수
@@ -92,7 +93,7 @@ class fileUpload extends RequireModuleName
                 {
                     chmod($dest_file, 0664);
 
-                    $uploaded_files[] = new RequireModuleName(array(
+                    $uploaded_files[] = new File(array(
                         'file_module'=>$this->module_name,
                         'file_name'=>$file_name,
                         'file_path'=>$real_file_name,

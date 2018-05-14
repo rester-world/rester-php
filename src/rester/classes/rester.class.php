@@ -1,11 +1,9 @@
 <?php
 /**
- *  @class    rester
- *  @author   박경종(kevinpark@webace.co.kr)
- *  @brief    모듈
- *  @date     2018.05.02 - 생성
- *  
- *  @update   2018.05.02 -
+ * Class rester
+ * kevinpark@webace.co.kr
+ *
+ * 기본 핵심 모듈
  */
 class rester
 {
@@ -27,6 +25,7 @@ class rester
 
     /**
      * Add error message & set failure
+     *
      * @param string $msg error message
      */
     public static function error($msg)
@@ -63,12 +62,13 @@ class rester
         // check request parameter
         if($path_verify = self::path_verify())
         {
-            $schema = new schema($path_verify);
-            if($data = $schema->validate(cfg::Get('request-body')))
-                foreach($data as $k => $v) rester::set_request_param($k, $v);
+            $schema = new \Rester\Schema\Schema($path_verify);
 
             if($data = $schema->validate(cfg::Get('request-headers')))
                 foreach($data as $k => $v) rester::set_request_header($k, $v);
+
+            if($data = $schema->validate(cfg::Get('request-body')))
+                foreach($data as $k => $v) rester::set_request_param($k, $v);
         }
 
         // check request param with func
@@ -114,6 +114,7 @@ class rester
 
     /**
      * Path to module
+     *
      * @return string
      */
     protected static function path_module()
@@ -123,9 +124,17 @@ class rester
 
     /**
      * Path to procedure file
+     *
      * @param null $module_name 모듈 이름
      * @param null $proc_name   프로시저 이름
      * @return bool|string      실패 | 경로
+     */
+    /**
+     * @param null $module_name
+     * @param null $proc_name
+     *
+     * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_proc($module_name = null, $proc_name = null)
     {
@@ -146,9 +155,11 @@ class rester
     /**
      * Path to fn file
      *
-     * @param string $name
-     * @param string $module_name
+     * @param string     $name
+     * @param null|string $module_name
+     *
      * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     public static function path_fn($name, $module_name = null)
     {
@@ -187,6 +198,7 @@ class rester
 
     /**
      * Path to config file
+     *
      * @param null $module_name 모듈명
      * @return bool|string 실패 | 경로
      */
@@ -206,9 +218,12 @@ class rester
 
     /**
      * Path to verify file
+     *
      * @param null $module_name
      * @param null $proc_name
+     *
      * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_verify($module_name = null, $proc_name = null)
     {
@@ -228,9 +243,12 @@ class rester
 
     /**
      * Path to verify file
+     *
      * @param null $module_name
      * @param null $proc_name
+     *
      * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_verify_func($module_name = null, $proc_name = null)
     {
@@ -250,9 +268,12 @@ class rester
 
     /**
      * Path to auth file
-     * @param null $module_name
-     * @param null $proc_name
+     *
+     * @param null|string $module_name
+     * @param null|string $proc_name
+     *
      * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_auth($module_name = null, $proc_name = null)
     {

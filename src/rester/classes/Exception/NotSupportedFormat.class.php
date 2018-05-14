@@ -25,10 +25,9 @@ class NotSupportedFormat extends ExceptionBase
         self::ERR_NO_FIELD => '스키마에 없는 필드',
     );
 
-    public function __construct($message, $code = 0)
+    public function __construct($code = 0)
     {
-        $msg = "";
-        parent::__construct($message, $code);
+        parent::__construct($this->msg[$code], $code);
     }
 }
 

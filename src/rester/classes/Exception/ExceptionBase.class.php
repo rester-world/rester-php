@@ -5,7 +5,7 @@ namespace Rester\Exception;
  *
  * @package Rester\Exception
  */
-class ExceptionBase extends Exception
+class ExceptionBase extends \Exception
 {
     public function __construct($message, $code = 0, Exception $previous = null)
     {

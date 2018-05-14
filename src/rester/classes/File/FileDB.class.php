@@ -6,7 +6,7 @@ namespace Rester\File;
  *
  * 업로드된 파일을 데이터베이스로 저장
  */
-class fileDB extends RequireModuleName
+class FileDB extends File
 {
     protected $schema = null;
     protected $pdo = null;

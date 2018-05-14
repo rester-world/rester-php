@@ -2,14 +2,14 @@
 
 try
 {
-    $scheam = new schema('rester/classes/file.schema.ini');
+    $scheam = new \Rester\Schema\Schema('rester/classes/file.schema.ini');
 }
 catch (Exception $e)
 {
     var_dump($e);
 }
 
-var_dump($scheam);
+//var_dump($scheam);
 
 exit;
 
