@@ -27,20 +27,44 @@ class Schema
 
     private $schema = array();
 
-    protected function validate_string($data)
+    /**
+     * @param string $data
+     *
+     * @return string
+     * @throws ExceptionBase
+     */
+    protected function validate_id($data)
     {
-
+        if(preg_match('/^[a-zA-Z][a-zA-Z0-9_-:.]+$/', $data, $matches)) return $data;
+        throw new ExceptionBase("아이디에 허용되지 않은 문자가 있습니다. 허용문자(영문, 숫자, -, _, :, .)");
     }
 
+    /**
+     * 날짜 형식 채크
+     *
+     * @param string $data
+     *
+     * @return bool|string
+     */
     protected function validate_datetime($data)
     {
-
+        return date_parse($data)===false?false:$data;
     }
 
-
+    /**
+     * 파일명 검증
+     * 파일명에 쓸 수 없는 9가지 문자가 있으면 안됨
+     * \ / : * ? " < > |
+     *
+     * @param string $data
+     *
+     * @return null|string|string[]
+     * @throws ExceptionBase
+     */
     protected function validate_filename($data)
     {
-
+        if(preg_match('/[\\/:\*\?\"<>\|]/', $data, $matches)) throw new ExceptionBase("파일명에는 특수문자가 올 수 없습니다.");
+        return $data;
     }
 
     /**
