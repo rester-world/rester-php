@@ -2,12 +2,11 @@
 class db extends PDO
 {
 
-
     /**
      * @var array
      */
     private static $inst_arr = array();
-    const db_file = "db_config.php";
+    const db_file = "dbconfig.php";
 
     /**
      * db constructor.
