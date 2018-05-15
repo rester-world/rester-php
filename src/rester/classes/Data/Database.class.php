@@ -3,7 +3,7 @@ namespace Rester\Data;
 /**
  * Class Database
  */
-class Database extends PDO
+class Database extends \PDO
 {
     /**
      * @var object Schema class object
@@ -45,7 +45,7 @@ class Database extends PDO
      * @param string $query
      * @param array  $data
      *
-     * @return bool|PDOStatement
+     * @return bool|\PDOStatement
      * @throws \Exception
      */
     private function common_query($query, $data = array())
@@ -53,7 +53,7 @@ class Database extends PDO
         if (!is_string($query)) throw new \Exception("1번째 파라미터는 문자열입니다.");
         $stmt = $this->prepare($query);
         if(!$stmt) throw new \Exception("DB 객체가 생성되지 않았습니다.");
-        $stmt->setFetchMode(PDO::FETCH_ASSOC);
+        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         foreach ($data as $key => &$value)
             $stmt->bindParam($key, $value);
         if (!$stmt->execute()) throw new \Exception('쿼리 실패 입니다.');
@@ -135,9 +135,9 @@ class Database extends PDO
             $stmt = $this->common_query($query, $data);
             return $stmt->rowCount();
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Delete Error');
+            throw new \Exception('Delete Error');
         }
     }
 
@@ -151,7 +151,7 @@ class Database extends PDO
     {
         try
         {
-            return $this->query($query)->fetch(PDO::FETCH_ASSOC);
+            return $this->query($query)->fetch(\PDO::FETCH_ASSOC);
         }
         catch (\Exception $e)
         {
@@ -170,7 +170,7 @@ class Database extends PDO
     {
         try
         {
-            return $this->query($query)->fetchAll(PDO::FETCH_ASSOC);
+            return $this->query($query)->fetchAll(\PDO::FETCH_ASSOC);
         }
         catch (\Exception $e)
         {
@@ -190,7 +190,7 @@ class Database extends PDO
     {
         try
         {
-            return $this->query($query)->fetchAll(PDO::FETCH_OBJ);
+            return $this->query($query)->fetchAll(\PDO::FETCH_OBJ);
         }
         catch (\Exception $e)
         {

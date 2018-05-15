@@ -1,6 +1,10 @@
 <?php if(!defined('__RESTER__')) exit;
 
 $pdo = db::get('default');
+$result = $pdo->select('select * from user ');
+
+var_dump($result);
+exit;
 
 /*
 try

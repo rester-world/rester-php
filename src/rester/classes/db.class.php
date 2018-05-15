@@ -14,9 +14,9 @@ class db
     const config_file = "dbconfig.php"; // config 파일명
 
     /**
-     * @param $config_name
+     * @param string $config_name
      *
-     * @return mixed
+     * @return \Rester\Data\Database
      * @throws Exception
      */
     public static function get($config_name)
@@ -27,12 +27,12 @@ class db
             $cfg = $cfg[$config_name];
 
             if (!is_array($cfg)) throw new Exception('해당 DB 정보가 없습니다.');
-            if (!$cfg['db_name']) throw new Exception('해당 DB 이름이 없습니다.');
+            if (!$cfg['database']) throw new Exception('해당 DB 이름이 없습니다.');
 
-            if (self::$inst[$cfg['db_name']] == null)
+            if (self::$inst[$config_name] == null)
             {
                 $dsn = self::create_dsn($cfg);
-                self::$inst[$cfg['db_name']] = new Database($dsn, $cfg['user'], $cfg['password']);
+                self::$inst[$config_name] = new Database($dsn, $cfg['user'], $cfg['password']);
             }
         }
         catch (Exception $e)
@@ -40,7 +40,7 @@ class db
             echo $e;
             exit;
         }
-        return self::$inst[$cfg['db_name']];
+        return self::$inst[$config_name];
     }
 
     /**
@@ -57,15 +57,15 @@ class db
 
         if ($db_type == "oracle" || $db_type == "orcl" || $db_type == "oci")
         {
-            $dns = "oci:dbname=//" . $arg['host'] . ':' . $arg['port'] . '/' . $arg['db_name'];
+            $dns = "oci:dbname=//" . $arg['host'] . ':' . $arg['port'] . '/' . $arg['database'];
         }
         elseif ($db_type == "mssql" || $db_type == "dblib")
         {
-            $dns = "dblib:host=" . $arg['host'] . ':' . $arg['port'] . ';dbname=' . $arg['db_name'];
+            $dns = "dblib:host=" . $arg['host'] . ':' . $arg['port'] . ';dbname=' . $arg['database'];
         }
         else
         {
-            $dns = $db_type . ":host=" . $arg['host'] . ";port=" . $arg['port'] . ";dbname=" . $arg['db_name'];
+            $dns = $db_type . ":host=" . $arg['host'] . ";port=" . $arg['port'] . ";dbname=" . $arg['database'];
         }
         return $dns;
     }
