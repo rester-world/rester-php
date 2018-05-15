@@ -14,15 +14,22 @@ class Schema
     const TYPE_FUNCTION = 'function';
     const TYPE_FILTER = 'filter';
     const TYPE_FILENAME = 'filename';
-    const TYPE_STRING = 'string';
+    const TYPE_ID = 'id';
     const TYPE_DATETIME = 'datetime';
+    const TYPE_DATE = 'date';
+    const TYPE_TIME = 'time';
 
+    /**
+     * @var array 지원되는 타입 목록
+     */
     private $types = array(
         self::TYPE_REGEX,
         self::TYPE_FUNCTION,
         self::TYPE_FILENAME,
-        self::TYPE_STRING,
+        self::TYPE_ID,
         self::TYPE_DATETIME,
+        self::TYPE_DATE,
+        self::TYPE_TIME,
     );
 
     private $schema = array();
@@ -35,7 +42,7 @@ class Schema
      */
     protected function validate_id($data)
     {
-        if(preg_match('/^[a-zA-Z][a-zA-Z0-9_-:.]+$/', $data, $matches)) return $data;
+        if(preg_match('/^[a-zA-Z][a-zA-Z0-9_\-:.]*$/', $data, $matches)) return $data;
         throw new ExceptionBase("아이디에 허용되지 않은 문자가 있습니다. 허용문자(영문, 숫자, -, _, :, .)");
     }
 
@@ -45,10 +52,13 @@ class Schema
      * @param string $data
      *
      * @return bool|string
+     * @throws ExceptionBase
      */
     protected function validate_datetime($data)
     {
-        return date_parse($data)===false?false:$data;
+        $parsed = date_parse($data);
+        if($parsed['error_count']===0) return $data;
+        throw new ExceptionBase("날짜/시간 형식이 잘못되었습니다.");
     }
 
     /**
@@ -63,6 +73,7 @@ class Schema
     {
         $parsed = date_parse($data);
         if(
+            $parsed['error_count']===0 &&
             $parsed['year']!==false && $parsed['month']!==false && $parsed['day']!==false &&
             $parsed['hour']===false && $parsed['minute']===false && $parsed['second']===false
         )
@@ -82,6 +93,7 @@ class Schema
     {
         $parsed = date_parse($data);
         if(
+            $parsed['error_count']===0 &&
             $parsed['year']===false && $parsed['month']===false && $parsed['day']===false &&
             $parsed['hour']!==false && $parsed['minute']!==false && $parsed['second']!==false
         )

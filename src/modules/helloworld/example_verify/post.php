@@ -25,6 +25,10 @@ $body['data'] = array(
     'test_mac: '.rester::param('test_mac'),
     'test_url: '.rester::param('test_url'),
     'test_user_func: '.rester::param('test_user_func'),
+    'test_datetime: '.rester::param('test_datetime'),
+    'test_date: '.rester::param('test_date'),
+    'test_time: '.rester::param('test_time'),
+    'test_id: '.rester::param('test_id'),
 );
 
 echo json_encode($body);
