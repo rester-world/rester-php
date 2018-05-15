@@ -29,7 +29,7 @@ set_exception_handler(function($e) {
 });
 
 // 01. Default library include
-include_once(dirname(__FILE__) . '/lib.basic.php');
+include_once(dirname(__FILE__) . '/common.lib.php');
 
 // 02. Library folder include
 foreach (glob(dirname(__FILE__) . '/lib/lib.*.php') as $filename)
