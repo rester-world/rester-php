@@ -44,7 +44,9 @@ if (!function_exists('getallheaders'))
 
 /**
  * @param string $name
+ *
  * @return bool|mixed
+ * @throws \Rester\Exception\ExceptionBase
  */
 function fn($name)
 {
@@ -60,7 +62,9 @@ function fn($name)
 /**
  * @param string $module
  * @param string $name
+ *
  * @return bool|mixed
+ * @throws \Rester\Exception\ExceptionBase
  */
 function fnEX($module, $name)
 {
@@ -76,7 +80,9 @@ function fnEX($module, $name)
 /**
  * @param null|string $section
  * @param null|string $key
+ *
  * @return array|bool|mixed
+ * @throws \Rester\Exception\ExceptionBase
  */
 function cfg($section=null,$key=null)
 {
@@ -91,10 +97,12 @@ function cfg($section=null,$key=null)
 }
 
 /**
- * @param string $module
+ * @param string      $module
  * @param null|string $section
  * @param null|string $key
+ *
  * @return array|bool|mixed
+ * @throws \Rester\Exception\ExceptionBase
  */
 function cfgEX($module, $section=null, $key=null)
 {
@@ -112,7 +120,9 @@ function cfgEX($module, $section=null, $key=null)
  * Call sql file module/sql.{name}.php
  *
  * @param string $name
+ *
  * @return bool|mixed
+ * @throws \Rester\Exception\ExceptionBase
  */
 function sql($name)
 {
@@ -130,7 +140,9 @@ function sql($name)
  *
  * @param string $module
  * @param string $name
+ *
  * @return bool|mixed
+ * @throws \Rester\Exception\ExceptionBase
  */
 function sqlEX($module, $name)
 {
@@ -144,9 +156,11 @@ function sqlEX($module, $name)
 }
 
 /**
- * @param null|string $data
+ * @param null|string  $data
  * @param null|integer $timeout
+ *
  * @return bool|null|string
+ * @throws \Rester\Exception\ExceptionBase
  */
 function cache($data=null,$timeout=30)
 {
@@ -166,11 +180,13 @@ function cache($data=null,$timeout=30)
 }
 
 /**
- * @param string $module
- * @param string $proc
- * @param null|string $data
+ * @param string       $module
+ * @param string       $proc
+ * @param null|string  $data
  * @param null|integer $timeout
+ *
  * @return bool|null|string
+ * @throws \Rester\Exception\ExceptionBase
  */
 function cacheEX($module, $proc, $data=null, $timeout=30)
 {
@@ -192,5 +208,44 @@ function cacheEX($module, $proc, $data=null, $timeout=30)
     }
     $redis->close();
     return $data;
+}
+
+/**
+ * @param array $arr
+ *
+ * @return bool
+ */
+function is_assoc($arr)
+{
+    $keys = array_keys($arr);
+    return array_keys($keys) !== $keys;
+}
+
+/**
+ * @param $key
+ * @param $function
+ *
+ * @throws \Rester\Exception\ExceptionBase
+ */
+function verify_header($key, $function)
+{
+    if(!is_callable($function)) throw new \Rester\Exception\ExceptionBase("2번째 파라미터는 호출 가능한 함수여야 합니다.");
+
+    $data = $function(cfg::Get('request-headers',$key));
+    if($data) rester::set_request_header($key, $data);
+}
+
+/**
+ * @param $key
+ * @param $function
+ *
+ * @throws \Rester\Exception\ExceptionBase
+ */
+function verify_param($key, $function)
+{
+    if(!is_callable($function)) throw new \Rester\Exception\ExceptionBase("2번째 파라미터는 호출 가능한 함수여야 합니다.");
+
+    $data = $function(cfg::Get('request-body',$key));
+    if($data) rester::set_request_param($key, $data);
 }
 

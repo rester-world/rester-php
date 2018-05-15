@@ -11,6 +11,7 @@ $body['data'] = array(
     '------------------------------------------------------------',
     'x-auth-id : '.rester::param_header('x-auth-id'),
     'x-auth-token : '.rester::param_header('x-auth-token'),
+    'x-auth-user-func : '.rester::param_header('x-auth-user-func'),
     '------------------------------------------------------------',
     '== POST | json body ==',
     '------------------------------------------------------------',
@@ -23,6 +24,7 @@ $body['data'] = array(
     'test_ip: '.rester::param('test_ip'),
     'test_mac: '.rester::param('test_mac'),
     'test_url: '.rester::param('test_url'),
+    'test_user_func: '.rester::param('test_user_func'),
 );
 
 echo json_encode($body);

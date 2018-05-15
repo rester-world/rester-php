@@ -43,11 +43,19 @@ class Schema
 
     }
 
+    /**
+     * @param array $data
+     * @param bool  $strict
+     *
+     * @return array
+     * @throws ExceptionBase
+     */
     public function validate($data, $strict=false)
     {
         // check param
-        if(!is_array($data)) throw new ExceptionBase("1번째 파라미터는 연관배열이 필요합니다.");
+        if(!is_array($data) || !is_assoc($data)) throw new ExceptionBase("1번째 파라미터는 연관배열이 필요합니다.");
         if(!is_bool($strict)) throw new ExceptionBase("2번째 파라미터는 boolean  필요합니다.");
+
 
         $result = array();
 
@@ -175,11 +183,11 @@ class Schema
      * key[type] 필수
      * key[regexp] 정규식 (type=regexp)
      * key[filter] integer php 함수의 필터값 (type=filter)
-     * key[option] integer php 함수의 옵션값 (type=filter)
+     * key[options] integer php 함수의 옵션값 (type=filter)
      *
      * @throws ExceptionBase
      */
-    public function set_schema($data)
+    protected function set_schema($data)
     {
         // 배열 형식 검사
         if(!is_array($data)) throw new ExceptionBase("데이터는 배열형식 이어야 합니다.");
@@ -195,9 +203,11 @@ class Schema
                 case self::TYPE_REGEX:
                     if(!isset($v[self::TYPE_REGEX])) throw new ExceptionBase("[regexp = 정규식] 필수 사항입니다.");
                     break;
+
                 case self::TYPE_FILTER:
                     if(!isset($v[self::TYPE_FILTER])) throw new ExceptionBase("[filter = 필터명] 필수 사항입니다.");
                     break;
+
                 default:
                     if(!in_array($v['type'], $this->types)) throw new ExceptionBase("지원되지 않는 type 값입니다. ({$v['type']})");
             }
@@ -212,7 +222,7 @@ class Schema
      *
      * @throws ExceptionBase
      */
-    public function set_schema_json($json_string)
+    protected function set_schema_json($json_string)
     {
         try
         {
@@ -231,7 +241,7 @@ class Schema
      *
      * @throws ExceptionBase
      */
-    public function set_schema_file_json($file_path)
+    protected function set_schema_file_json($file_path)
     {
         try
         {
@@ -250,7 +260,7 @@ class Schema
      *
      * @throws ExceptionBase
      */
-    public function set_schema_file_ini($file_path)
+    protected function set_schema_file_ini($file_path)
     {
         try
         {

@@ -48,8 +48,7 @@ class rester
     /**
      * run rester
      *
-     * 1. auth check
-     * 2. verify parameter
+     * 1. verify parameter
      * 3. check error
      * 4. include procedure
      * 5. echo response code
@@ -107,8 +106,11 @@ class rester
             ob_end_clean();
         }
 
+        // 응답 결과 코드 설정
         http_response_code(self::$response_code);
+        // 응답헤더 출력
         self::run_headers();
+        // 저장된 $body 출력
         echo $body;
     }
 
@@ -178,9 +180,11 @@ class rester
     /**
      * Path to sql file
      *
-     * @param string $name
-     * @param string $module_name
+     * @param      $name
+     * @param null $module_name
+     *
      * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     public static function path_sql($name, $module_name = null)
     {
@@ -199,8 +203,10 @@ class rester
     /**
      * Path to config file
      *
-     * @param null $module_name 모듈명
-     * @return bool|string 실패 | 경로
+     * @param null $module_name
+     *
+     * @return bool|string
+     * @throws \Rester\Exception\ExceptionBase
      */
     public static function path_cfg($module_name = null)
     {
@@ -293,8 +299,9 @@ class rester
 
     /**
      * 요청헤더 설정
-     * @param $key
-     * @param $value
+     *
+     * @param string $key
+     * @param string $value
      */
     public static function set_request_header($key, $value)
     {
@@ -304,8 +311,9 @@ class rester
 
     /**
      * 요청바디 설정
-     * @param $key
-     * @param $value
+     *
+     * @param string $key
+     * @param string $value
      */
     public static function set_request_param($key, $value)
     {
@@ -324,7 +332,7 @@ class rester
 
     /**
      * 요청값 반환
-     * @param $key
+     * @param string $key
      * @return bool|mixed
      */
     public static function param($key)
@@ -334,8 +342,8 @@ class rester
     }
 
     /**
-     * @param $key
-     * @param $value
+     * @param string $key
+     * @param string $value
      */
     public static function set_response_header($key, $value)
     {
