@@ -1,5 +1,5 @@
 <?php
-namespace Rester\Schema;
+namespace Rester\Data;
 use \Rester\Exception\ExceptionBase;
 /**
  * Class schema
