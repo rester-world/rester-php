@@ -52,6 +52,46 @@ class Schema
     }
 
     /**
+     * 날짜 형식 체크
+     *
+     * @param string $data
+     *
+     * @return string
+     * @throws ExceptionBase
+     */
+    protected function validate_date($data)
+    {
+        $parsed = date_parse($data);
+        if(
+            $parsed['year']!==false && $parsed['month']!==false && $parsed['day']!==false &&
+            $parsed['hour']===false && $parsed['minute']===false && $parsed['second']===false
+        )
+            return $data;
+        throw new ExceptionBase("날짜 형식이 맞지 않습니다.");
+    }
+
+    /**
+     * 시간형식 체크
+     *
+     * @param string $data
+     *
+     * @return string
+     * @throws ExceptionBase
+     */
+    protected function validate_time($data)
+    {
+        $parsed = date_parse($data);
+        if(
+            $parsed['year']===false && $parsed['month']===false && $parsed['day']===false &&
+            $parsed['hour']!==false && $parsed['minute']!==false && $parsed['second']!==false
+        )
+            return $data;
+        throw new ExceptionBase("시간 형식이 맞지 않습니다.");
+    }
+
+
+
+    /**
      * 파일명 검증
      * 파일명에 쓸 수 없는 9가지 문자가 있으면 안됨
      * \ / : * ? " < > |
