@@ -1,13 +1,23 @@
 <?php if(!defined('__RESTER__')) exit;
 
-verify_param('test_user_func', function($value)
+try
 {
-    return strpos($value, 'rester')===false?false:$value;
-});
+    verify_param('test_user_func', function($value)
+    {
+        return strpos($value, 'rester')===false?false:$value;
+    });
 
-verify_header('x-auth-user-func', function($value)
+    verify_header('x-auth-user-func', function($value)
+    {
+        return strpos($value, 'rester')===false?false:$value;
+    });
+
+}
+catch (\Rester\Exception\ExceptionBase $e)
 {
-    return strpos($value, 'rester')===false?false:$value;
-});
+    echo $e;
+    exit;
+}
+
 
 
