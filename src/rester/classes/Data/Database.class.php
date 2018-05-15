@@ -11,6 +11,11 @@ class Database extends \PDO
     private $schema;
 
     /**
+     * @var string table name
+     */
+    private $tbn;
+
+    /**
      * Database constructor.
      *
      * @param $dsn
@@ -24,6 +29,7 @@ class Database extends \PDO
         try
         {
             $this->schema = null;
+            $this->tbn = null;
             parent::__construct($dsn, $user_name, $password);
             $this->exec("set names utf8");
         }
@@ -42,6 +48,14 @@ class Database extends \PDO
     }
 
     /**
+     * @param string $table_name
+     */
+    public function set_table($table_name)
+    {
+        $this->tbn = $table_name;
+    }
+
+    /**
      * @param string $query
      * @param array  $data
      *
@@ -51,34 +65,46 @@ class Database extends \PDO
     private function common_query($query, $data = array())
     {
         if (!is_string($query)) throw new \Exception("1번째 파라미터는 문자열입니다.");
-        $stmt = $this->prepare($query);
-        if(!$stmt) throw new \Exception("DB 객체가 생성되지 않았습니다.");
+        if(!($stmt = $this->prepare($query))) throw new \Exception("DB 객체가 생성되지 않았습니다.");
+
         $stmt->setFetchMode(\PDO::FETCH_ASSOC);
-        foreach ($data as $key => &$value)
-            $stmt->bindParam($key, $value);
+        foreach ($data as $key => &$value) $stmt->bindParam($key, $value);
         if (!$stmt->execute()) throw new \Exception('쿼리 실패 입니다.');
         return $stmt;
     }
 
     /**
-     * @param string $query
-     * @param array  $data
+     * @param array $data
      *
-     * @return int
+     * @return string
      * @throws \Exception
      */
-    public function insert($query, $data = array())
+    public function insert($data)
     {
         try
         {
+            $query = $this->gen_insert_query($data);
             $this->common_query($query, $data);
+            return $this->lastInsertId();
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Insert Error');
+            throw $e;//new \Exception('Insert Error');
         }
+    }
 
-        return $this->last_insert_id();
+    /**
+     * @param array $data
+     *
+     * @return string
+     */
+    private function gen_insert_query($data)
+    {
+        $fields = $values = array_keys($data);
+        array_walk($fields, function(&$item) { if(strpos($item, ':')===0) $item = substr($item, 1); });
+        $fields = implode(',',$fields);
+        $values = implode(',',$values);
+        return "INSERT INTO {$this->tbn} ({$fields}) VALUES ({$values})";
     }
 
     /**
@@ -235,36 +261,6 @@ class Database extends \PDO
             throw new \Exception('Affected Row Error');
 
         }
-
-    }
-
-    /**
-     * @return string
-     */
-    public function last_insert_id()
-    {
-        return $this->lastInsertId();
-    }
-
-    /**
-     * @param $table_name
-     * @param $data
-     *
-     * @return string
-     * @throws \Exception
-     */
-    public function insert_ex($table_name, $data)
-    {
-        try
-        {
-            $query = $this->get_insert_string($table_name, $data);
-            $this->common_query($query, $data);
-            return $this->last_insert_id();
-        }
-        catch (\Exception $e)
-        {
-            throw new \Exception('Insert Ex Error');
-        }
     }
 
     /**
@@ -278,7 +274,7 @@ class Database extends \PDO
     {
         try
         {
-            $query = $this->get_delete_string($table_name, $data);
+            $query = $this->gen_delete_query($table_name, $data);
             $stmt = $this->common_query($query, $data);
             return $stmt->rowCount();
         }
@@ -288,28 +284,7 @@ class Database extends \PDO
         }
     }
 
-    /**
-     * @param $table_name
-     * @param $data
-     *
-     * @return string
-     */
-    private function get_insert_string($table_name, $data)
-    {
-        $front_str = "insert into $table_name (";
-        $back_str = " values(";
-        foreach ($data as $key => $value)
-        {
-            if (substr($key, 0, 1) == ":") $key = substr($key, 1, strlen($key) - 1);
-            $front_str .= $key . ",";
-            $back_str .= ':' . $key . ",";
-        }
-        $front_str = substr($front_str, 0, -1) . ")";
-        $back_str = substr($back_str, 0, -1) . ")";
-        return $front_str . $back_str . ";";
-    }
-
-    private function get_delete_string($table_name, $data)
+    private function gen_delete_query($table_name, $data)
     {
         $str = "delete from $table_name where ";
         foreach ($data as $key => $value)

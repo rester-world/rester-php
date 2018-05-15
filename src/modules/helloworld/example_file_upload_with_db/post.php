@@ -1,7 +1,13 @@
 <?php if(!defined('__RESTER__')) exit;
 
 $pdo = db::get('default');
-$result = $pdo->select('select * from user ');
+$pdo->set_table('user');
+$result = $pdo->insert(array(
+    ':user_id'=>'hong',
+    ':user_name'=>'홍길동',
+    ':user_pw'=>'1234',
+    ':regi_date'=>date("Y-m-d H:i:s"),
+));
 
 var_dump($result);
 exit;

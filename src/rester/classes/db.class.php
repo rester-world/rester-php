@@ -3,6 +3,8 @@ use \Rester\Data\Database;
 
 /**
  * Class db
+ * @author kevinpark@webace.co.kr
+ * @author
  */
 class db
 {
