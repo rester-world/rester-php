@@ -129,9 +129,9 @@ class Schema
     public function validate($data, $strict=false)
     {
         // check param
+        if(is_array($data) && sizeof($data)==0) return array();
         if(!is_array($data) || !is_assoc($data)) throw new ExceptionBase("1번째 파라미터는 연관배열이 필요합니다.");
         if(!is_bool($strict)) throw new ExceptionBase("2번째 파라미터는 boolean  필요합니다.");
-
 
         $result = array();
 
