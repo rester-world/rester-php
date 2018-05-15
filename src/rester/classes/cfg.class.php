@@ -193,6 +193,7 @@ class cfg
             catch (ExceptionBase $e)
             {
                 echo $e;
+                exit;
             }
         }
         if($section==='') return self::$data;

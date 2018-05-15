@@ -136,7 +136,6 @@ class rester
      * @param null $proc_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_proc($module_name = null, $proc_name = null)
     {
@@ -161,7 +160,6 @@ class rester
      * @param null|string $module_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     public static function path_fn($name, $module_name = null)
     {
@@ -184,7 +182,6 @@ class rester
      * @param null $module_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     public static function path_sql($name, $module_name = null)
     {
@@ -206,7 +203,6 @@ class rester
      * @param null $module_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     public static function path_cfg($module_name = null)
     {
@@ -229,7 +225,6 @@ class rester
      * @param null $proc_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_verify($module_name = null, $proc_name = null)
     {
@@ -254,7 +249,6 @@ class rester
      * @param null $proc_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_verify_func($module_name = null, $proc_name = null)
     {
@@ -279,7 +273,6 @@ class rester
      * @param null|string $proc_name
      *
      * @return bool|string
-     * @throws \Rester\Exception\ExceptionBase
      */
     protected static function path_auth($module_name = null, $proc_name = null)
     {
