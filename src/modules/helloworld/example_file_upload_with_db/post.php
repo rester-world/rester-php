@@ -1,5 +1,8 @@
 <?php if(!defined('__RESTER__')) exit;
 
+$pdo = db::get('default');
+
+/*
 try
 {
     //$scheam = new \Rester\Data\Schema('rester/classes/Data/Schema.file.ini');
@@ -9,7 +12,6 @@ catch (Exception $e)
     echo $e;
 }
 
-/*
 //var_dump($scheam);
 
 // 파일 업로드 처리

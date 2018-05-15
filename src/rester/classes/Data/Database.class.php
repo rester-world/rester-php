@@ -1,102 +1,44 @@
 <?php
-class db extends PDO
+namespace Rester\Data;
+/**
+ * Class Database
+ */
+class Database extends PDO
 {
+    /**
+     * @var object Schema class object
+     */
+    private $schema;
 
     /**
-     * @var array
-     */
-    private static $inst_arr = array();
-    const db_file = "dbconfig.php";
-
-    /**
-     * db constructor.
+     * Database constructor.
      *
-     * @param $arg
+     * @param $dsn
+     * @param $user_name
+     * @param $password
      *
-     * @throws Exception
+     * @throws \Exception
      */
-    public function __construct($arg)
+    public function __construct($dsn, $user_name, $password)
     {
         try
         {
-            include_once(dirname(dirname(__FILE__).'/../../../cfg/'.self::db_file));
-
-            $info = $this->connect_info($arg);
-            parent::__construct($info, $arg[user_name], $arg[password]);
-            $this->set_utf8();
+            $this->schema = null;
+            parent::__construct($dsn, $user_name, $password);
+            $this->exec("set names utf8");
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('DB Connect Fail');
+            throw new \Exception('DB Connect Fail');
         }
     }
 
     /**
-     * @param string $arg
-     *
-     * @return string
-     * @throws Exception
+     * @param object $schema
      */
-    private function connect_info($arg)
+    public function set_schema($schema)
     {
-        $db_type = strtolower($arg['db_type']);
-        if (!is_string($db_type)) throw new Exception('커넥션 정보가 명확하지 않습니다.');
-        if ($db_type == "oracle" || $db_type == "orcl" || $db_type == "oci")
-        {
-            $dns = "oci:dbname=//" . $arg['host'] . ':' . $arg['port'] . '/' . $arg[db_name];
-        }
-        elseif ($db_type == "mssql" || $db_type == "dblib")
-        {
-            $dns = "dblib:host=" . $arg['host'] . ':' . $arg['port'] . ';dbname=' . $arg[db_name];
-        }
-        else
-        {
-            $dns = $db_type . ":host=" . $arg['host'] . ";port=" . $arg['port'] . ";dbname=" . $arg[db_name];
-        }
-        return $dns;
-    }
-
-    /**
-     * @param $cnf
-     *
-     * @return mixed
-     * @throws Exception
-     */
-    public static function get_con($cnf)
-    {
-        try
-        {
-            include_once(dirname(__FILE__).'/../../../cfg/'.self::db_file);
-            $arg = $db_config[$cnf];
-            if (!is_array($arg))
-            {
-                throw new Exception('해당 DB 정보가 없습니다.<br/>');
-            }
-
-            $db_name = $arg['db_name'];
-
-            if (!$db_name) throw new Exception('해당 DB 이름이 없습니다.<br/>');
-
-            if (self::$inst_arr[$db_name] == null)
-            {
-                self::$inst_arr[$db_name] = new db($arg);
-            }
-            if (!self::$inst_arr[$db_name]) throw new Exception('인스턴스 에러 <br/>');
-            return self::$inst_arr[$db_name];
-        }
-        catch (Exception $e)
-        {
-            throw new Exception('Instance Error');
-        }
-    }
-
-
-    /**
-     * utf-8 setting
-     */
-    private function set_utf8()
-    {
-        $this->exec("set names utf8");
+        $this->schema = $schema;
     }
 
     /**
@@ -104,27 +46,26 @@ class db extends PDO
      * @param array  $data
      *
      * @return bool|PDOStatement
-     * @throws Exception
+     * @throws \Exception
      */
     private function common_query($query, $data = array())
     {
-        if (!is_string($query)) throw new Exception("1번째 파라미터는 문자열입니다. <br/>");
+        if (!is_string($query)) throw new \Exception("1번째 파라미터는 문자열입니다.");
         $stmt = $this->prepare($query);
-        if(!$stmt) throw new Exception("DB 객체가 생성되지 않았습니다. <br/>");
+        if(!$stmt) throw new \Exception("DB 객체가 생성되지 않았습니다.");
         $stmt->setFetchMode(PDO::FETCH_ASSOC);
         foreach ($data as $key => &$value)
             $stmt->bindParam($key, $value);
-        if (!$stmt->execute()) throw new Exception('쿼리 실패 입니다. <br/>');
+        if (!$stmt->execute()) throw new \Exception('쿼리 실패 입니다.');
         return $stmt;
     }
-
 
     /**
      * @param string $query
      * @param array  $data
      *
      * @return int
-     * @throws Exception
+     * @throws \Exception
      */
     public function insert($query, $data = array())
     {
@@ -132,9 +73,9 @@ class db extends PDO
         {
             $this->common_query($query, $data);
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Insert Error');
+            throw new \Exception('Insert Error');
         }
 
         return $this->last_insert_id();
@@ -145,7 +86,7 @@ class db extends PDO
      * @param array  $data
      *
      * @return array
-     * @throws Exception
+     * @throws \Exception
      */
     public function select($query, $data = array())
     {
@@ -154,9 +95,9 @@ class db extends PDO
             $stmt = $this->common_query($query, $data);
             return $stmt->fetchAll();
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Select Error');
+            throw new \Exception('Select Error');
         }
     }
 
@@ -165,7 +106,7 @@ class db extends PDO
      * @param array  $data
      *
      * @return int
-     * @throws Exception
+     * @throws \Exception
      */
     public function update($query, $data = array())
     {
@@ -174,9 +115,9 @@ class db extends PDO
             $stmt = $this->common_query($query, $data);
             return $stmt->rowCount();
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Update Error');
+            throw new \Exception('Update Error');
         }
     }
 
@@ -185,7 +126,7 @@ class db extends PDO
      * @param array $data
      *
      * @return int
-     * @throws Exception
+     * @throws \Exception
      */
     public function delete($query, $data = array())
     {
@@ -204,7 +145,7 @@ class db extends PDO
      * @param $query
      *
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function fetch($query)
     {
@@ -212,9 +153,9 @@ class db extends PDO
         {
             return $this->query($query)->fetch(PDO::FETCH_ASSOC);
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Fetch Error');
+            throw new \Exception('Fetch Error');
 
         }
     }
@@ -223,7 +164,7 @@ class db extends PDO
      * @param $query
      *
      * @return array
-     * @throws Exception
+     * @throws \Exception
      */
     public function fetch_array($query)
     {
@@ -231,9 +172,9 @@ class db extends PDO
         {
             return $this->query($query)->fetchAll(PDO::FETCH_ASSOC);
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Fetch Array Error');
+            throw new \Exception('Fetch Array Error');
 
         }
 
@@ -243,7 +184,7 @@ class db extends PDO
      * @param $query
      *
      * @return array
-     * @throws Exception
+     * @throws \Exception
      */
     public function fetch_object($query)
     {
@@ -251,9 +192,9 @@ class db extends PDO
         {
             return $this->query($query)->fetchAll(PDO::FETCH_OBJ);
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Fetch Object Error');
+            throw new \Exception('Fetch Object Error');
 
         }
 
@@ -264,7 +205,7 @@ class db extends PDO
      * @param $key
      *
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function get_password($key)
     {
@@ -272,16 +213,16 @@ class db extends PDO
         {
             return $this->query('select password("' . $key . '") as pw')->fetch()['pw'];
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Password Error');
+            throw new \Exception('Password Error');
 
         }
     }
 
     /**
      * @return mixed
-     * @throws Exception
+     * @throws \Exception
      */
     public function affected_row()
     {
@@ -289,9 +230,9 @@ class db extends PDO
         {
             return $this->query('SELECT ROW_COUNT() as cnt;')->fetch()['cnt'];
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Affected Row Error');
+            throw new \Exception('Affected Row Error');
 
         }
 
@@ -310,7 +251,7 @@ class db extends PDO
      * @param $data
      *
      * @return string
-     * @throws Exception
+     * @throws \Exception
      */
     public function insert_ex($table_name, $data)
     {
@@ -320,9 +261,9 @@ class db extends PDO
             $this->common_query($query, $data);
             return $this->last_insert_id();
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Insert Ex Error');
+            throw new \Exception('Insert Ex Error');
         }
     }
 
@@ -331,7 +272,7 @@ class db extends PDO
      * @param $data
      *
      * @return int
-     * @throws Exception
+     * @throws \Exception
      */
     public function delete_ex($table_name, $data)
     {
@@ -341,9 +282,9 @@ class db extends PDO
             $stmt = $this->common_query($query, $data);
             return $stmt->rowCount();
         }
-        catch (Exception $e)
+        catch (\Exception $e)
         {
-            throw new Exception('Delete Ex Error');
+            throw new \Exception('Delete Ex Error');
         }
     }
 
