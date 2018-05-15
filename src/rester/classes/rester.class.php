@@ -61,7 +61,7 @@ class rester
         // check request parameter
         if($path_verify = self::path_verify())
         {
-            $schema = new \Rester\Schema\Schema($path_verify);
+            $schema = new \Rester\Data\Schema($path_verify);
 
             if($data = $schema->validate(cfg::Get('request-headers')))
                 foreach($data as $k => $v) rester::set_request_header($k, $v);
