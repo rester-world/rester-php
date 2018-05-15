@@ -8,7 +8,57 @@ namespace Rester\File;
  */
 class FileDB extends File
 {
-    protected $schema = null;
+    /**
+     * @var array 테이블 스키마정의
+     */
+    protected $schema = array(
+        'file_no'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_VALIDATE_INT',
+        ),
+        'file_fkey'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_VALIDATE_INT',
+        ),
+        'file_owner'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_VALIDATE_INT',
+        ),
+        'file_module'=>array(
+            'type'=>'regexp',
+            'filter'=>'/^[a-z0-9-_]$/i',
+        ),
+        'file_name'=>array(
+            'type'=>'fliename',
+        ),
+        'file_local_name'=>array(
+            'type'=>'fliename',
+        ),
+        'file_download'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_VALIDATE_INT',
+        ),
+        'file_size'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_VALIDATE_INT',
+        ),
+        'file_type'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_SANITIZE_STRING',
+        ),
+        'file_desc'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_SANITIZE_STRING',
+        ),
+        'file_datetime'=>array(
+            'type'=>'datetime',
+        ),
+        'file_tmp'=>array(
+            'type'=>'filter',
+            'filter'=>'FILTER_VALIDATE_BOOLEAN',
+        ),
+    );
+
     protected $pdo = null;
 
     public function __construct($data)
@@ -23,24 +73,24 @@ class FileDB extends File
 
     public function insert()
     {
-        $pdo->insert($data);
+        //$pdo->insert($data);
     }
 
     public function fetch()
     {
-        $recoard = $pdo->fetch($file_no);
+        //$recoard = $pdo->fetch($file_no);
     }
 
     public function delete()
     {
         // 디비레코드 삭제
-        $pdo->delete();
-        parent::delete();
+        //$pdo->delete();
+        //parent::delete();
     }
 
     public function update_count()
     {
-        $pdo->update();
+        //$pdo->update();
     }
 
     public function update_desc()
@@ -50,7 +100,7 @@ class FileDB extends File
 
     public function list_by_fkey()
     {
-        $pdo->select();
+        //$pdo->select();
         //$pdo->sql_query_list('select ');
         // return number of fileDB instance;
     }

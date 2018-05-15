@@ -2,16 +2,15 @@
 
 try
 {
-    $scheam = new \Rester\Schema\Schema('rester/classes/file.schema.ini');
+    //$scheam = new \Rester\Data\Schema('rester/classes/Data/Schema.file.ini');
 }
 catch (Exception $e)
 {
-    var_dump($e);
+    echo $e;
 }
 
+/*
 //var_dump($scheam);
-
-exit;
 
 // 파일 업로드 처리
 $f = new fileUpload('fname');
@@ -41,3 +40,4 @@ foreach ($files as $file)
 }
 
 echo json_encode($body);
+//*/
