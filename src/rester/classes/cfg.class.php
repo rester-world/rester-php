@@ -181,7 +181,6 @@ class cfg
      * @param string $key
      *
      * @return mixed
-     * @throws ExceptionBase
      */
     public static function Get($section='', $key='')
     {
@@ -193,7 +192,7 @@ class cfg
             }
             catch (ExceptionBase $e)
             {
-                throw $e;
+                echo $e;
             }
         }
         if($section==='') return self::$data;
