@@ -46,7 +46,7 @@ class db
     }
 
     /**
-     * @param string $arg
+     * @param array $arg
      *
      * @return string
      * @throws Exception
