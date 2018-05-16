@@ -10,3 +10,5 @@ foreach (sql('list',cfg('rows')) as $row)
     );
 }
 
+return $result;
+

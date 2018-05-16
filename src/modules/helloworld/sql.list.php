@@ -11,3 +11,4 @@ for ($i=0; $i<$arg[0]; $i++)
 }
 
 
+return $sql_result;

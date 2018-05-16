@@ -6,7 +6,6 @@
 function GetRealIPAddr()
 {
     //check ip from share internet
-    $ip = '0.0.0.0';
     if (!empty($_SERVER['HTTP_CLIENT_IP']))
     {
         $ip=$_SERVER['HTTP_CLIENT_IP'];
@@ -46,15 +45,15 @@ if (!function_exists('getallheaders'))
  * @param string $name
  *
  * @return bool|mixed
- * @throws \Rester\Exception\ExceptionBase
  */
 function fn($name)
 {
     $result = false;
     if($path = rester::path_fn($name))
     {
+        /** @noinspection PhpUnusedLocalVariableInspection */
         $arg = array_slice(func_get_args(),1);
-        include $path;
+        $result = include $path;
     }
     return $result;
 }
@@ -64,15 +63,15 @@ function fn($name)
  * @param string $name
  *
  * @return bool|mixed
- * @throws \Rester\Exception\ExceptionBase
  */
 function fnEX($module, $name)
 {
     $result = false;
     if($path = rester::path_fn($name,$module))
     {
+        /** @noinspection PhpUnusedLocalVariableInspection */
         $arg = array_slice(func_get_args(),2);
-        include $path;
+        $result = include $path;
     }
     return $result;
 }
@@ -82,7 +81,6 @@ function fnEX($module, $name)
  * @param null|string $key
  *
  * @return array|bool|mixed
- * @throws \Rester\Exception\ExceptionBase
  */
 function cfg($section=null,$key=null)
 {
@@ -102,7 +100,6 @@ function cfg($section=null,$key=null)
  * @param null|string $key
  *
  * @return array|bool|mixed
- * @throws \Rester\Exception\ExceptionBase
  */
 function cfgEX($module, $section=null, $key=null)
 {
@@ -122,15 +119,15 @@ function cfgEX($module, $section=null, $key=null)
  * @param string $name
  *
  * @return bool|mixed
- * @throws \Rester\Exception\ExceptionBase
  */
 function sql($name)
 {
     $sql_result = false;
     if($path = rester::path_sql($name))
     {
+        /** @noinspection PhpUnusedLocalVariableInspection */
         $arg = array_slice(func_get_args(),1);
-        include $path;
+        $sql_result = include $path;
     }
     return $sql_result;
 }
@@ -142,15 +139,15 @@ function sql($name)
  * @param string $name
  *
  * @return bool|mixed
- * @throws \Rester\Exception\ExceptionBase
  */
 function sqlEX($module, $name)
 {
     $sql_result = false;
     if($path = rester::path_sql($name,$module))
     {
+        /** @noinspection PhpUnusedLocalVariableInspection */
         $arg = array_slice(func_get_args(),2);
-        include $path;
+        $sql_result = include $path;
     }
     return $sql_result;
 }
