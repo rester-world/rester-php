@@ -21,27 +21,41 @@ class db
      * @return \Rester\Data\Database
      * @throws Exception
      */
-    public static function get($config_name)
+    public static function get($config_name='default')
     {
-        try
+        if(!is_string($config_name)) throw new Exception("1번째 파라미터는 dbconfig.php 파일 설정 키 값 이어야 합니다.");
+
+        // 처음 호출이면 아래 내용 실행
+        if (self::$inst[$config_name] == null)
         {
             $cfg = include dirname(__FILE__).'/../../../cfg/'.self::config_file;
+
+            if(!isset($cfg[$config_name])) throw new Exception("키 값에 맞는 설정이 없습니다.");
+
             $cfg = $cfg[$config_name];
+            if (
+                !isset($cfg['type'])
+                || !isset($cfg['host'])
+                || !isset($cfg['user'])
+                || !isset($cfg['password'])
+                || !isset($cfg['database'])
+            )
+            {
+                throw new Exception('dbconfig.php 설정 형식이 잘못되었습니다.');
+            }
 
-            if (!is_array($cfg)) throw new Exception('해당 DB 정보가 없습니다.');
-            if (!$cfg['database']) throw new Exception('해당 DB 이름이 없습니다.');
-
-            if (self::$inst[$config_name] == null)
+            try
             {
                 $dsn = self::create_dsn($cfg);
                 self::$inst[$config_name] = new Database($dsn, $cfg['user'], $cfg['password']);
             }
+            catch (Exception $e)
+            {
+                echo $e;
+                exit;
+            }
         }
-        catch (Exception $e)
-        {
-            echo $e;
-            exit;
-        }
+
         return self::$inst[$config_name];
     }
 
