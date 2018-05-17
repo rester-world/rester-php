@@ -1,9 +1,10 @@
 <?php
 namespace Rester\Data;
+use \PDO;
 /**
  * Class Database
  */
-class Database extends \PDO
+class Database extends PDO
 {
     /**
      * @var object Schema class object
@@ -18,24 +19,28 @@ class Database extends \PDO
     /**
      * Database constructor.
      *
-     * @param $dsn
-     * @param $user_name
-     * @param $password
+     * @param string $dsn
+     * @param string $user_name
+     * @param string $password
      *
      * @throws \Exception
      */
     public function __construct($dsn, $user_name, $password)
     {
+        //if(!is_string($dsn)) throw new \Rester\Exception\InvalidParamException("\$dsn : ", \Rester\Exception\InvalidParamException::REQUIRE_STRING);
+
         try
         {
             $this->schema = null;
             $this->tbn = null;
             parent::__construct($dsn, $user_name, $password);
+
             $this->exec("set names utf8");
+            $this->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
         }
         catch (\Exception $e)
         {
-            throw new \Exception('DB Connect Fail');
+            throw $e;
         }
     }
 
@@ -67,7 +72,6 @@ class Database extends \PDO
         if (!is_string($query)) throw new \Exception("1번째 파라미터는 문자열입니다.");
         if(!($stmt = $this->prepare($query))) throw new \Exception("DB 객체가 생성되지 않았습니다.");
 
-        $stmt->setFetchMode(\PDO::FETCH_ASSOC);
         foreach ($data as $key => &$value) $stmt->bindParam($key, $value);
         if (!$stmt->execute()) throw new \Exception('쿼리 실패 입니다.');
         return $stmt;
@@ -81,30 +85,25 @@ class Database extends \PDO
      */
     public function insert($data)
     {
+        if ($this->tbn===null) throw new \Exception("1번째 파라미터는 문자열입니다.");
+
+        $clear = $schema->validate($data);
+
+        $fields = $values = array_keys($data);
+        array_walk($fields, function(&$item) { if(strpos($item, ':')===0) $item = substr($item, 1); });
+        $fields = implode(',',$fields);
+        $values = implode(',',$values);
+        $query =  "INSERT INTO {$this->tbn} ({$fields}) VALUES ({$values})";
+
         try
         {
-            $query = $this->gen_insert_query($data);
             $this->common_query($query, $data);
             return $this->lastInsertId();
         }
         catch (\Exception $e)
         {
-            throw $e;//new \Exception('Insert Error');
+            throw $e;
         }
-    }
-
-    /**
-     * @param array $data
-     *
-     * @return string
-     */
-    private function gen_insert_query($data)
-    {
-        $fields = $values = array_keys($data);
-        array_walk($fields, function(&$item) { if(strpos($item, ':')===0) $item = substr($item, 1); });
-        $fields = implode(',',$fields);
-        $values = implode(',',$values);
-        return "INSERT INTO {$this->tbn} ({$fields}) VALUES ({$values})";
     }
 
     /**
@@ -134,8 +133,30 @@ class Database extends \PDO
      * @return int
      * @throws \Exception
      */
-    public function update($query, $data = array())
+    public function update($query, $data)
     {
+        try
+        {
+            $stmt = $this->common_query($query, $data);
+            return $stmt->rowCount();
+        }
+        catch (\Exception $e)
+        {
+            throw new \Exception('Update Error');
+        }
+    }
+
+    /**
+     * @param string $query
+     * @param array  $data
+     *
+     * @return int
+     * @throws \Exception
+     */
+    public function update_simple($data, $where_key, $where_value)
+    {
+        //
+
         try
         {
             $stmt = $this->common_query($query, $data);
@@ -177,7 +198,7 @@ class Database extends \PDO
     {
         try
         {
-            return $this->query($query)->fetch(\PDO::FETCH_ASSOC);
+            return $this->query($query)->fetch();
         }
         catch (\Exception $e)
         {
@@ -185,47 +206,6 @@ class Database extends \PDO
 
         }
     }
-
-    /**
-     * @param $query
-     *
-     * @return array
-     * @throws \Exception
-     */
-    public function fetch_array($query)
-    {
-        try
-        {
-            return $this->query($query)->fetchAll(\PDO::FETCH_ASSOC);
-        }
-        catch (\Exception $e)
-        {
-            throw new \Exception('Fetch Array Error');
-
-        }
-
-    }
-
-    /**
-     * @param $query
-     *
-     * @return array
-     * @throws \Exception
-     */
-    public function fetch_object($query)
-    {
-        try
-        {
-            return $this->query($query)->fetchAll(\PDO::FETCH_OBJ);
-        }
-        catch (\Exception $e)
-        {
-            throw new \Exception('Fetch Object Error');
-
-        }
-
-    }
-
 
     /**
      * @param $key
@@ -241,7 +221,7 @@ class Database extends \PDO
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Password Error');
+            throw $e;
 
         }
     }
@@ -258,7 +238,7 @@ class Database extends \PDO
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Affected Row Error');
+            throw $e;
 
         }
     }
