@@ -167,7 +167,7 @@ class Schema
                     if(!is_integer($filter)) throw new ExceptionBase("필터 형식이 잘못되었습니다.");
                     if($options !== null && !is_integer($options)) throw new ExceptionBase("필터 옵션 형식이 잘못되었습니다.");
 
-                    if ($clean = filter_var($v, $filter, $options))
+                    if (false !== ($clean = filter_var($v, $filter, $options)))
                     {
                         $result[$k] = $clean;
                     }

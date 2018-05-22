@@ -1,5 +1,9 @@
 <?php
 namespace Rester\File;
+use db;
+use Rester\Data\Database;
+use Rester\Data\Schema;
+
 /**
  * Class fileDB
  * kevinpark@webace.co.kr
@@ -8,84 +12,179 @@ namespace Rester\File;
  */
 class FileDB extends File
 {
+    const field_no = 'file_no';         // 파일번호
+    const field_fkey = 'file_fkey';     // 연결테이블의 키값
+    const field_owner = 'file_owner';   // 파일업로드 유저값
+    const field_module = 'file_module'; // 모듈명(경로계산)
+    const field_name = 'file_name';     // 파일명(업로드원본파일명)
+    const field_local_name = 'file_local_name'; // 저장된 파일명
+    const field_download = 'file_download'; // 다운로드 횠수
+    const field_size = 'file_size';     // 파일크기
+    const field_type = 'file_type';     // 파일 mime-type
+    const field_desc = 'file_desc';     // 파일설명
+    const field_datetime = 'file_datetime'; // 파일업로드 시간
+    const field_tmp = 'file_tmp';       // 임시파일 여부
+
     /**
      * @var array 테이블 스키마정의
      */
     protected $schema = array(
-        'file_no'=>array(
+        self::field_no=>array(
             'type'=>'filter',
             'filter'=>'FILTER_VALIDATE_INT',
         ),
-        'file_fkey'=>array(
+        self::field_fkey=>array(
             'type'=>'filter',
             'filter'=>'FILTER_VALIDATE_INT',
         ),
-        'file_owner'=>array(
+        self::field_owner=>array(
             'type'=>'filter',
             'filter'=>'FILTER_VALIDATE_INT',
         ),
-        'file_module'=>array(
+        self::field_module=>array(
             'type'=>'regexp',
-            'filter'=>'/^[a-z0-9-_]$/i',
+            'regexp'=>'/^[a-z0-9-_]+$/i',
         ),
-        'file_name'=>array(
-            'type'=>'fliename',
+        self::field_name=>array(
+            'type'=>Schema::TYPE_FILENAME,
         ),
-        'file_local_name'=>array(
-            'type'=>'fliename',
+        self::field_local_name=>array(
+            'type'=>Schema::TYPE_FILENAME,
         ),
-        'file_download'=>array(
+        self::field_download=>array(
             'type'=>'filter',
             'filter'=>'FILTER_VALIDATE_INT',
         ),
-        'file_size'=>array(
+        self::field_size=>array(
             'type'=>'filter',
             'filter'=>'FILTER_VALIDATE_INT',
         ),
-        'file_type'=>array(
+        self::field_type=>array(
             'type'=>'filter',
             'filter'=>'FILTER_SANITIZE_STRING',
         ),
-        'file_desc'=>array(
+        self::field_desc=>array(
             'type'=>'filter',
             'filter'=>'FILTER_SANITIZE_STRING',
         ),
-        'file_datetime'=>array(
+        self::field_datetime=>array(
             'type'=>'datetime',
         ),
-        'file_tmp'=>array(
+        self::field_tmp=>array(
             'type'=>'filter',
             'filter'=>'FILTER_VALIDATE_BOOLEAN',
         ),
     );
 
-    protected $pdo = null;
+    /**
+     * @var Database
+     */
+    protected $db = null;
 
-    public function __construct($data)
+    /**
+     * FileDB constructor.
+     *
+     * @param array $data
+     * @param string $table_name
+     *
+     * @throws \Exception
+     */
+    public function __construct($table_name, $data)
     {
+        try
+        {
+            $this->db = db::get();
+            $this->db->set_table($table_name);
+            $this->db->set_schema(new Schema($this->schema));
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
+
         parent::__construct($data);
     }
 
+    /**
+     * 기본 스키마를 바꾸고 싶을 때
+     *
+     * @param array $schema
+     *
+     * @throws \Exception
+     */
     public function set_schema($schema)
     {
-
+        try
+        {
+            $this->db->set_schema(new Schema($schema));
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
     }
 
-    public function insert()
+    /**
+     * @param int $fkey
+     * @param int $owner
+     *
+     * @return integer
+     * @throws \Exception
+     */
+    public function insert($fkey=0, $owner=0)
     {
-        //$pdo->insert($data);
+        $this->data = array_filter($this->data);
+        $this->data[self::field_fkey] = $fkey;
+        $this->data[self::field_owner] = $owner;
+        $this->data[self::field_tmp] = 1;
+
+        try
+        {
+            $id = $this->db->insert($this->data);
+            $this->data[self::field_no] = $id;
+            return $id;
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
     }
 
-    public function fetch()
+    /**
+     * @param integer $file_no
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function fetch($file_no)
     {
-        //$recoard = $pdo->fetch($file_no);
+        try
+        {
+            return $this->data = $this->db->fetch(" SELECT * FROM example_file WHERE file_no={$file_no} LIMIT 1");
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
     }
 
+    /**
+     * @throws \Exception
+     */
     public function delete()
     {
-        // 디비레코드 삭제
-        //$pdo->delete();
-        //parent::delete();
+        try
+        {
+            // 디비레코드 삭제
+            $this->db->simple_delete(self::field_no, $this->file_no());
+
+            // 로컬 파일 삭제
+            parent::delete();
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
     }
 
     public function update_count()
@@ -93,7 +192,7 @@ class FileDB extends File
         //$pdo->update();
     }
 
-    public function update_desc()
+    public function update_desc($desc)
     {
 
     }
@@ -116,33 +215,13 @@ class FileDB extends File
         //$pdo->sql_query_list('select ');
     }
 
+    /**
+     * @return string 파일 키
+     */
+    public function file_no() { return $this->data[self::field_no]; }
 
 
 
-  /**
-   *  @brief 레코드 패치
-   *  
-   *  @param [in] $key file_no 키값
-   *  @return 키값에 따른 레코드
-   *  
-   *  @details 데이터베이스에서 레코드 하나를 패치해 온다.
-   */
-  public function db_fetch($key)
-  {
-    if($key)
-    {
-      $tbn = $this->cfg[self::tbn];
-      $sql = "
-        SELECT *
-        FROM {$tbn}
-        WHERE file_no = {$key}
-        LIMIT 1
-      ";
-      return D::sql_fetch($sql);
-    }
-    return false;
-  }
-  
   /**
    *  @brief 파일목록 (외래키)
    *  
@@ -151,7 +230,6 @@ class FileDB extends File
    *  
    *  @details 외래키값을 받아 외래키와 매칭되는 목록을 받아옴
    *  로그인 한 회원의 임시 업로드된 파일도 같이 받아옴
-   */
   public function db_list($key, $tmp = true)
   {
     if($key)
@@ -168,47 +246,14 @@ class FileDB extends File
     }
     return false;
   }
-  
-  /**
-   *  @brief 레코드 삽입
-   *  
-   *  @param [in] $mb_no     회원번호
-   *  @param [in] $fkey      외래키
-   *  @param [in] $file_name 원본파일명
-   *  @param [in] $file_path 실제파일명
-   *  @param [in] $file_size 파일크기
-   *  @param [in] $file_type 파일타입
-   *  @return 삽입된 레코드번호 또는 false (실패)
-   *  
-   *  @details 데이터베이스에 레코드를 삽입하고 삽입된 레코드번호를 반환한다.
-   *  함수 파라미터중에 하나라도 잘못넘어오면 실행하지 않고 false를 반환한다.
    */
-  public function db_insert($mb_no, $fkey, $file_name, $file_path, $file_size, $file_type, $file_desc='')
-  {
-    if($mb_no && $fkey && $file_name && $file_path && $file_size && $file_type)
-    {
-      $clear = array();
-      $clear['mb_no'] = $mb_no;
-      $clear['file_fkey'] = $fkey;
-      $clear['file_tmp'] = 1;
-      $clear['file_name'] = $file_name;
-      $clear['file_path'] = $file_path;
-      $clear['file_size'] = $file_size;
-      $clear['file_type'] = $file_type;
-      $clear['file_desc'] = $file_desc;
-      $clear['file_datetime'] = 'NOW()';
-      return D::insertEx($this->cfg[self::tbn], $clear, array('file_datetime'));
-    }
-    return false;
-  }
-  
+
   /**
    *  @brief 레코드 삭제
    *  
    *  @param [in] $key 삭제할 레코드 키 값
    *  
    *  @details 레코드 키값을 받아 데이터베이스 레코드를 삭제함
-   */
   public function db_delete($key, $mb_no=0)
   {
     if($key)
@@ -227,7 +272,8 @@ class FileDB extends File
     }
     return false;
   }
-  
+   */
+
   /**
    *  @brief 레코드 삭제
    *  
@@ -235,7 +281,6 @@ class FileDB extends File
    *  @param [in] $mb_no 회원번호
    *  
    *  @details 레코드 키값을 받아 데이터베이스 레코드를 삭제함
-   */
   public function db_delete_list($key, $mb_no=0)
   {
     if($key)
@@ -251,7 +296,8 @@ class FileDB extends File
     }
     return false;
   }
-  
+   */
+
   /**
    *  @brief 임시파일 -> 정상파일
    *  
@@ -261,7 +307,6 @@ class FileDB extends File
    *  
    *  @details 외래키 값과 회원번호를 통해 임시파일을 정상파일로 변경
    *  회원번호를 넣는 이유는 자신이 올린 파일만 업데이트 하기위함
-   */
   public function db_update_tmp($key, $mb_no)
   {
     if($key && $mb_no)
@@ -278,7 +323,8 @@ class FileDB extends File
     }
     return false;
   }
-  
+   */
+
   /**
    *  @brief 파일설명 업데이트
    *  
@@ -288,7 +334,6 @@ class FileDB extends File
    *  @return true or false
    *  
    *  @details Details
-   */
   public function db_update_desc($key, $desc, $mb_no)
   {
     if($key && $desc)
@@ -322,5 +367,6 @@ class FileDB extends File
     }
     return false;
   }
-	
+   */
+
 }

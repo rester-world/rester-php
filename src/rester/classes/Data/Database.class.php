@@ -118,7 +118,7 @@ class Database extends PDO
 
         try
         {
-            $data = $this->schema->validate($data);
+            $data = $this->schema->validate($data,true);
             foreach ($data as $key => &$value) $stmt->bindParam($key, $value);
             $stmt->execute();
         }
@@ -187,7 +187,6 @@ class Database extends PDO
 
     /**
      * @param string $query
-     * @param array  $data
      *
      * @return array
      * @throws \Exception
@@ -201,7 +200,66 @@ class Database extends PDO
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Select Error');
+            throw $e;
+        }
+    }
+
+    /**
+     * @param string $query
+     *
+     * @return mixed
+     * @throws \Exception
+     */
+    public function fetch($query)
+    {
+        try
+        {
+            return $this->select($query)[0];
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
+    }
+
+    /**
+     * @param  string $query
+     *
+     * @return int
+     * @throws \Exception
+     */
+    public function delete($query)
+    {
+        try
+        {
+            $stmt = $this->common_query($query);
+            return $stmt->rowCount();
+        }
+        catch (\Exception $e)
+        {
+            throw new \Exception('Delete Error');
+        }
+    }
+
+    /**
+     * @param string $key
+     * @param string $value
+     *
+     * @return int
+     * @throws \Exception
+     */
+    public function simple_delete($key,$value)
+    {
+        $query = "DELETE FROM `$this->tbn` WHERE {$key}=:{$key} LIMIT 1 ";
+
+        try
+        {
+            $stmt = $this->common_query($query, array($key=>$value));
+            return $stmt->rowCount();
+        }
+        catch (\Exception $e)
+        {
+            throw new $e;
         }
     }
 
@@ -221,7 +279,7 @@ class Database extends PDO
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Update Error');
+            throw $e;
         }
     }
 
@@ -248,44 +306,7 @@ class Database extends PDO
         return 0;
     }
 
-    /**
-     * @param       $query
-     * @param array $data
-     *
-     * @return int
-     * @throws \Exception
-     */
-    public function delete($query, $data = array())
-    {
-        try
-        {
-            $stmt = $this->common_query($query, $data);
-            return $stmt->rowCount();
-        }
-        catch (\Exception $e)
-        {
-            throw new \Exception('Delete Error');
-        }
-    }
 
-    /**
-     * @param $query
-     *
-     * @return mixed
-     * @throws \Exception
-     */
-    public function fetch($query)
-    {
-        try
-        {
-            return $this->query($query)->fetch();
-        }
-        catch (\Exception $e)
-        {
-            throw new \Exception('Fetch Error');
-
-        }
-    }
 
     /**
      * @param $key
@@ -323,37 +344,5 @@ class Database extends PDO
         }
     }
 
-    /**
-     * @param $table_name
-     * @param $data
-     *
-     * @return int
-     * @throws \Exception
-     */
-    public function delete_ex($table_name, $data)
-    {
-        try
-        {
-            $query = $this->gen_delete_query($table_name, $data);
-            $stmt = $this->common_query($query, $data);
-            return $stmt->rowCount();
-        }
-        catch (\Exception $e)
-        {
-            throw new \Exception('Delete Ex Error');
-        }
-    }
-
-    private function gen_delete_query($table_name, $data)
-    {
-        $str = "delete from $table_name where ";
-        foreach ($data as $key => $value)
-        {
-            if (substr($key, 0, 1) == ":") $key = substr($key, 1, strlen($key) - 1);
-            $str .= $key . "=:" . $key . " and ";
-        }
-        $str = substr($str, 0, -4);
-        return $str;
-    }
 
 }

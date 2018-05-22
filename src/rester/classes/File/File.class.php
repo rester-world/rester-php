@@ -1,6 +1,8 @@
 <?php
 namespace Rester\File;
 use \cfg;
+use Rester\Exception\RequireModuleName;
+
 /**
  *	@class		File
  *	@author	Kevin Park (kevinpark1981<>gmail.com)
@@ -21,16 +23,17 @@ class File
     protected $data = array(
         'file_module'=>null,
         'file_name'=>null,
-        'file_path'=>null,
+        'file_local_name'=>null,
         'file_size'=>null,
         'file_type'=>null,
+        'file_desc'=>null,
         'file_datetime'=>null
     );
 
     /**
      * file constructor.
      *
-     * @param null|array $data 파일데이터
+     * @param null|array|File $data 파일데이터
      *
      * @throws RequireModuleName
      */
@@ -43,8 +46,23 @@ class File
         if(null !== ($v = cfg::Get('file','path_group'))) $this->path_group = $v;
         if(null !== ($v = cfg::Get('file','path_detail'))) $this->path_detail= $v;
 
-        if(null !== $data) $this->data = $data;
+        if(is_object($data))
+        {
+            $this->data['file_module'] = $data->file_module();
+            $this->data['file_name'] = $data->file_name();
+            $this->data['file_local_name'] = $data->file_local_name();
+            $this->data['file_size'] = $data->file_size();
+            $this->data['file_type'] = $data->file_type();
+            $this->data['file_desc'] = $data->file_desc();
+            $this->data['file_datetime'] = $data->file_datetime();
+        }
+        elseif(null !== $data) $this->data = $data;
     }
+
+    /**
+     * @return string 모듈명
+     */
+    public function file_module() { return $this->data['file_module']; }
 
     /**
      * @return string 파일명
@@ -54,7 +72,7 @@ class File
     /**
      * @return string 저장된 파일명
      */
-    public function file_path() { return $this->data['file_path']; }
+    public function file_local_name() { return $this->data['file_local_name']; }
 
     /**
      * @return integer 파일크기
@@ -65,6 +83,11 @@ class File
      * @return string 파일 mime-type
      */
     public function file_type() { return $this->data['file_type']; }
+
+    /**
+     * @return string 파일설명
+     */
+    public function file_desc() { return $this->data['file_desc']; }
 
     /**
      * @return datetime 파일 업로드 시각
@@ -178,9 +201,9 @@ class File
      */
     public function delete()
     {
-        if($this->data['file_path'])
+        if($this->data['file_local_name'])
         {
-            $path = $this->upload_path($this->data['file_path']);
+            $path = $this->upload_path($this->data['file_local_name']);
             foreach (glob($path.'*') as $v)
             {
                 if(is_file($v)) unlink($v);

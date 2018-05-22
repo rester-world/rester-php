@@ -1,6 +1,8 @@
 <?php
 namespace Rester\File;
 use \cfg;
+use rester;
+
 /**
  * Class FileUpload
  * kevinpark@webace.co.kr
@@ -15,7 +17,10 @@ class FileUpload extends  File
 
     /**
      * fileUpload constructor.
-     * @param $name form name
+     *
+     * @param string $name form name
+     *
+     * @throws \Rester\Exception\RequireModuleName
      */
     public function __construct($name)
     {
@@ -45,7 +50,8 @@ class FileUpload extends  File
      *  - 단일파일 또는 멀티파일 모두를 지원 하기위한 전처리
      *  - 파일 개수만큼 데이터베이스 레코드를 삽입하고 업로드된 목록을 반환해 줌
      *
-     * @return array 업로드된 파일목록
+     * @return File[] 업로드된 파일목록
+     * @throws \Rester\Exception\RequireModuleName
      */
     public function run()
     {
@@ -81,7 +87,7 @@ class FileUpload extends  File
             // 확장자 체크
             if(!in_array($file_ext,$this->extensions))
             {
-                rester::error("허용되지 않는 파일 확장자 입니다. ({$this->file_name})");
+                rester::error("허용되지 않는 파일 확장자 입니다. ({$file_ext})");
             }
             // 파일 업로드
             else if(is_uploaded_file($tmp_name))
@@ -96,10 +102,9 @@ class FileUpload extends  File
                     $uploaded_files[] = new File(array(
                         'file_module'=>$this->module_name,
                         'file_name'=>$file_name,
-                        'file_path'=>$real_file_name,
+                        'file_local_name'=>$real_file_name,
                         'file_size'=>$size,
-                        'file_type'=>$type,
-                        'file_datetime'=>date('Y-m-d H:i:s')
+                        'file_type'=>$type
                     ));
                 }
             }
