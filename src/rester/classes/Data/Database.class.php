@@ -7,7 +7,7 @@ use \PDO;
 class Database extends PDO
 {
     /**
-     * @var object Schema class object
+     * @var Schema
      */
     private $schema;
 
@@ -45,18 +45,60 @@ class Database extends PDO
     }
 
     /**
+     * Set Schema
+     * 1. 파일위치
+     * 2. object 직접
+     * 3. 모듈의 table.??.ini 파일
+     *
      * @param object $schema
+     *
+     * @return bool
+     * @throws \Exception
      */
-    public function set_schema($schema)
+    public function set_schema($schema=null)
     {
-        $this->schema = $schema;
+        // 파일위치로 생성
+        if(is_file($schema))
+        {
+            try
+            {
+                $this->schema = new Schema($schema);
+            }
+            catch (\Exception $e)
+            {
+                throw $e;
+            }
+        }
+        elseif(is_object($schema))
+        {
+            $this->schema = $schema;
+        }
+        elseif(is_file($path = \rester::path_schema($schema)))
+        {
+            try
+            {
+                $this->schema = new Schema($path);
+            }
+            catch (\Exception $e)
+            {
+                throw $e;
+            }
+        }
+        else
+        {
+            throw new \Exception("지원되는 파라미터가 아닙니다.");
+        }
+        return true;
     }
 
     /**
      * @param string $table_name
+     *
+     * @throws \Exception
      */
     public function set_table($table_name)
     {
+        if(!is_string($table_name)) throw new \Exception("테이블 이름을 입력하세요.");
         $this->tbn = $table_name;
     }
 
@@ -69,11 +111,21 @@ class Database extends PDO
      */
     private function common_query($query, $data = array())
     {
+        if(!is_object($this->schema)) $this->set_schema();
         if (!is_string($query)) throw new \Exception("1번째 파라미터는 문자열입니다.");
         if(!($stmt = $this->prepare($query))) throw new \Exception("DB 객체가 생성되지 않았습니다.");
 
-        foreach ($data as $key => &$value) $stmt->bindParam($key, $value);
-        if (!$stmt->execute()) throw new \Exception('쿼리 실패 입니다.');
+        try
+        {
+            $data = $this->schema->validate($data);
+            foreach ($data as $key => &$value) $stmt->bindParam($key, $value);
+            if(!$stmt->execute()) throw new \Exception("쿼리 실행 실패");
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
+
         return $stmt;
     }
 
@@ -85,9 +137,7 @@ class Database extends PDO
      */
     public function insert($data)
     {
-        if ($this->tbn===null) throw new \Exception("1번째 파라미터는 문자열입니다.");
-
-        $clear = $schema->validate($data);
+        if ($this->tbn===null) throw new \Exception("테이블 이름을 설정해야 합니다.");
 
         $fields = $values = array_keys($data);
         array_walk($fields, function(&$item) { if(strpos($item, ':')===0) $item = substr($item, 1); });

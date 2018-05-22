@@ -8,10 +8,11 @@
 class rester
 {
     const path_module = 'modules';
-    const file_verify = 'verify.ini';
-    const file_verify_func = 'verify.php';
-    const file_config = 'config.ini';
     const file_auth = 'auth.php';
+    const file_verify_func = 'verify.php';
+    const file_verify = 'verify.ini';
+    const file_config = 'config.ini';
+    const file_schema = 'schema.ini';
 
     protected static $request_headers = array();
     protected static $request_param = array();
@@ -200,7 +201,7 @@ class rester
     /**
      * Path to config file
      *
-     * @param null $module_name
+     * @param null|string $module_name
      *
      * @return bool|string
      */
@@ -212,6 +213,25 @@ class rester
             self::path_module(),
             $module_name,
             self::file_config
+        ));
+
+        if(is_file($path)) return $path;
+        return false;
+    }
+
+    /**
+     * Path to schema file
+     *
+     * @param null|string $name
+     *
+     * @return bool|string
+     */
+    public static function path_schema($name=null)
+    {
+        $path = implode('/',array(
+            self::path_module(),
+            cfg::Get('module'),
+            (($name===null)?'':$name.'.').self::file_schema
         ));
 
         if(is_file($path)) return $path;

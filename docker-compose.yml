@@ -8,12 +8,28 @@ services:
   image: redis
   restart: always
 
+  # sample database
+ db:
+  container_name: db
+  image: mariadb
+  restart: always
+  ports:
+    - 3306:3306
+  volumes:
+    - ./example_db.sql:/docker-entrypoint-initdb.d/dump.sql
+  environment:
+   MYSQL_RANDOM_ROOT_PASSWORD: "${MYSQL_RANDOM_ROOT_PASSWORD}"
+   MYSQL_DATABASE: "${MYSQL_DATABASE}"
+   MYSQL_USER: "${MYSQL_USER}"
+   MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+
  rester-php:
   container_name: rester-php
   image: kevinpark/nginx-php-redis
   restart: always
   links:
     - redis:cache.rester.kr
+    - db:db.rester.kr
   volumes:
   - ./default.conf:/etc/nginx/sites-available/default.conf:ro
   - ./src:/var/www/html

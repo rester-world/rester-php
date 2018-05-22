@@ -1,26 +1,22 @@
 <?php if(!defined('__RESTER__')) exit;
 
-$pdo = db::get('default');
-$pdo->set_table('user');
-$result = $pdo->insert(array(
-    ':user_id'=>'hong',
-    ':user_name'=>'홍길동',
-    ':user_pw'=>'1234',
-    ':regi_date'=>date("Y-m-d H:i:s"),
-));
-
-var_dump($result);
-exit;
-
-/*
 try
 {
-    //$scheam = new \Rester\Data\Schema('rester/classes/Data/Schema.file.ini');
+    $pdo = db::get();
+    $pdo->set_table('example');
+    $result = $pdo->insert(array(
+        ':key'=>'name',
+        ':value'=>'홍길동'
+    ));
 }
 catch (Exception $e)
 {
     echo $e;
 }
+
+exit;
+
+/*
 
 //var_dump($scheam);
 
