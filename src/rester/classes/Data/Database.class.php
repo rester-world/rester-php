@@ -37,6 +37,7 @@ class Database extends PDO
 
             $this->exec("set names utf8");
             $this->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+            $this->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         }
         catch (\Exception $e)
         {
@@ -119,7 +120,7 @@ class Database extends PDO
         {
             $data = $this->schema->validate($data);
             foreach ($data as $key => &$value) $stmt->bindParam($key, $value);
-            if(!$stmt->execute()) throw new \Exception("쿼리 실행 실패");
+            $stmt->execute();
         }
         catch (\Exception $e)
         {
@@ -139,8 +140,7 @@ class Database extends PDO
     {
         if ($this->tbn===null) throw new \Exception("테이블 이름을 설정해야 합니다.");
 
-        $fields = $values = array_keys($data);
-        array_walk($fields, function(&$item) { if(strpos($item, ':')===0) $item = substr($item, 1); });
+        list($fields, $values, $data) = $this->extract_data($data);
         $fields = implode(',',$fields);
         $values = implode(',',$values);
         $query =  "INSERT INTO {$this->tbn} ({$fields}) VALUES ({$values})";
@@ -154,6 +154,35 @@ class Database extends PDO
         {
             throw $e;
         }
+    }
+
+    /**
+     * 쿼리생성용 데이터 뽑기
+     * 필드명에는 ` 문자를 씌워준다.
+     *
+     * @param array $data
+     *
+     * @return array
+     */
+    protected function extract_data($data)
+    {
+        $fields = $values = $_data = array();
+        foreach ($data as $k=>$v)
+        {
+            if(strpos($k, ':')===0)
+            {
+                $fields[] = '`'.substr($k, 1).'`';
+                $values[] = $k;
+                $_data[substr($k, 1)] = $v;
+            }
+            else
+            {
+                $fields[] = '`'.$k.'`';
+                $values[] = ':'.$k;
+                $_data[$k] = $v;
+            }
+        }
+        return array($fields, $values, $_data);
     }
 
     /**
