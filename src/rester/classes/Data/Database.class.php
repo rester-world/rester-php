@@ -192,11 +192,11 @@ class Database extends PDO
      * @return array
      * @throws \Exception
      */
-    public function select($query, $data = array())
+    public function select($query)
     {
         try
         {
-            $stmt = $this->common_query($query, $data);
+            $stmt = $this->common_query($query);
             return $stmt->fetchAll();
         }
         catch (\Exception $e)
@@ -232,10 +232,9 @@ class Database extends PDO
      * @return int
      * @throws \Exception
      */
-    public function update_simple($data, $where_key, $where_value)
+    public function update_simple($data, $where_key='', $where_value='')
     {
-        //
-
+        /*
         try
         {
             $stmt = $this->common_query($query, $data);
@@ -245,6 +244,8 @@ class Database extends PDO
         {
             throw new \Exception('Update Error');
         }
+        //*/
+        return 0;
     }
 
     /**

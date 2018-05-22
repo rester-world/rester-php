@@ -1,14 +1,22 @@
 <?php if(!defined("__RESTER__")) exit;
 
 $sql_result = false;
-
-// execute sql
-// $sql_statement = " SELECT * FROM `table_name` WHERE 1 LIMIT 10 ";
-
-for ($i=0; $i<$arg[0]; $i++)
+/** @var integer $arg */
+if($rows = $arg[0])
 {
-    $sql_result[] = array('column1','column2','column3');
-}
+    try
+    {
+        $pdo = db::get();
 
+        foreach ($pdo->select(" SELECT * FROM `example` WHERE 1 LIMIT {$arg[0]} ") as $row)
+        {
+            $sql_result[] = array($row['no'], $row['key'],$row['value']);
+        }
+    }
+    catch (Exception $e)
+    {
+        $sql_result = false;
+    }
+}
 
 return $sql_result;
