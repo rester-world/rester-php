@@ -19,7 +19,7 @@ try
     foreach ($f->run() as $file)
     {
         $body['data'][] = '파일명 : '.$file->file_name();
-        $body['data'][] = '저장된파일명: '.$file->file_path();
+        $body['data'][] = '저장된파일명: '.$file->file_local_name();
         $body['data'][] = '파일크기 : '.$file->file_size();
         $body['data'][] = 'MIME : '.$file->file_type();
         $body['data'][] = '업로드 시각 : '.$file->file_datetime();

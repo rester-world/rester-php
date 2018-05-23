@@ -27,8 +27,6 @@ class Database extends PDO
      */
     public function __construct($dsn, $user_name, $password)
     {
-        //if(!is_string($dsn)) throw new \Rester\Exception\InvalidParamException("\$dsn : ", \Rester\Exception\InvalidParamException::REQUIRE_STRING);
-
         try
         {
             $this->schema = null;
@@ -205,6 +203,31 @@ class Database extends PDO
     }
 
     /**
+     * @param string $key
+     * @param string $value
+     * @param int $limit
+     *
+     * @return array
+     * @throws \Exception
+     */
+    public function simple_select($key,$value,$limit=0)
+    {
+        $query = "SELECT * FROM `$this->tbn` WHERE {$key}=:{$key} ";
+        if($limit) $query .= " LIMIT {$limit} ";
+
+        try
+        {
+            $stmt = $this->common_query($query,array($key=>$value));
+            return $stmt->fetchAll();
+        }
+        catch (\Exception $e)
+        {
+            throw $e;
+        }
+
+    }
+
+    /**
      * @param string $query
      *
      * @return mixed
@@ -237,7 +260,7 @@ class Database extends PDO
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Delete Error');
+            throw $e;
         }
     }
 
@@ -270,7 +293,7 @@ class Database extends PDO
      * @return int
      * @throws \Exception
      */
-    public function update($query, $data)
+    public function update($query, $data=[])
     {
         try
         {
@@ -284,15 +307,31 @@ class Database extends PDO
     }
 
     /**
-     * @param string $query
-     * @param array  $data
+     * 1개의 레코드를 업데이트 함
+     *
+     * @param array $data
+     *
+     * @param string $where_key
+     * @param string $where_value
      *
      * @return int
      * @throws \Exception
      */
-    public function update_simple($data, $where_key='', $where_value='')
+    public function simple_update($data, $where_key, $where_value)
     {
-        /*
+        if ($this->tbn===null) throw new \Exception("테이블 이름을 설정해야 합니다.");
+
+        $query_set = array();
+        list($fields, $values, $data) = $this->extract_data($data);
+
+        foreach ($fields as $k=>$v)
+        {
+            $query_set[] = $v.'='.$values[$k];
+        }
+        $query_set = implode(',',$query_set);
+
+        $query = " UPDATE `{$this->tbn}` SET {$query_set} WHERE `{$where_key}` = '{$where_value}' LIMIT 1 ";
+
         try
         {
             $stmt = $this->common_query($query, $data);
@@ -300,10 +339,8 @@ class Database extends PDO
         }
         catch (\Exception $e)
         {
-            throw new \Exception('Update Error');
+            throw $e;
         }
-        //*/
-        return 0;
     }
 
 
@@ -326,23 +363,5 @@ class Database extends PDO
 
         }
     }
-
-    /**
-     * @return mixed
-     * @throws \Exception
-     */
-    public function affected_row()
-    {
-        try
-        {
-            return $this->query('SELECT ROW_COUNT() as cnt;')->fetch()['cnt'];
-        }
-        catch (\Exception $e)
-        {
-            throw $e;
-
-        }
-    }
-
 
 }
