@@ -113,4 +113,52 @@ class FileUpload extends  File
         return $uploaded_files;
     }
 
+    /**외부 이미지 업로드
+    public function action_downloadNinsert($fkey, $path, $fname, $desc, $mb_no=1)
+    {
+    // 업로드 폴더 생성
+    mkdir($this->get_filepath(), 0775, true);
+    chmod($this->get_filepath(), 0775);
+    if($this->cfg[self::depth]>1) chmod($this->get_filepath(null,1), 0775);
+    if($this->cfg[self::group]) chmod($this->get_filepath(null,2), 0775);
+
+    $real_file_name = $this->gen_filename($this->get_filepath(), $fname);
+    $dest_file = $this->get_filepath().$real_file_name;
+
+    // 이미지 다운로드
+    CUrl::image($path, $dest_file);
+    chmod($dest_file, 0664);
+
+    $recoard = array();
+    $recoard['mb_no'] = $mb_no;
+    $recoard['file_fkey'] = $fkey;
+    $recoard['file_tmp'] = 1;
+    $recoard['file_name'] = $fname;
+    $recoard['file_desc'] = $desc;
+    $recoard['file_path'] = $real_file_name;
+    $recoard['file_size'] = filesize($dest_file);
+    $recoard['file_type'] = mime_content_type($dest_file);
+    $recoard['file_datetime'] = date("Y-m-d h:i:s");
+
+    // db insert
+    $file_no = $this->db_insert(
+    $recoard['mb_no'],
+    $recoard['file_fkey'],
+    $recoard['file_name'],
+    $recoard['file_path'],
+    $recoard['file_size'],
+    $recoard['file_type'],
+    $recoard['file_desc']
+    );
+
+    $recoard['file_no'] = $file_no;
+    $recoard['path_download'] = $this->path_download($file_no);
+    $recoard['path_delete'] = $this->path_delete($file_no);
+    $recoard['path_image'] = $this->path_image($file_no);
+    $recoard['path_thumb'] = $this->path_thumb($file_no);
+
+    return $recoard;
+    }
+     */
+
 }
