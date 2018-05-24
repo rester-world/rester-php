@@ -65,7 +65,7 @@ class FileImage extends File
                     break;
                 case 'image/png':
                     $resource = imagecreatefrompng($path);
-                    $background = imagecolorallocate($img, 0, 0, 0);
+                    $background = imagecolorallocate($resource, 0, 0, 0);
                     imagecolortransparent($resource, $background);
                     imagealphablending($resource, false);
                     imagesavealpha($resource, true);
@@ -125,20 +125,13 @@ class FileImage extends File
     }
 
     /**
-     *  @brief 썸네일 이미지 생성
+     * 썸네일 이미지 생성
+     * 썸네일 비율 유지한채 축소 여백에는 가장 많이 쓰인 컬러키 값으로 체움
+     * 이미 생성된 썸네일은 다시 생성하지 않음
      *
-     *  @param [in] $path_source  원본이미지 경로
-     *  @param [in] $thumb_width  썸네일 이미지 너비
-     *  @param [in] $thumb_height 썸네일 이미지 높이
-     *  @return 썸네일 이미지 리소스
-     *
-     *  @details 썸네일 비율 유지한채 축소 여백에는 가장 많이 쓰인 컬러키 값으로 체움
-     *  이미 생성된 썸네일은 다시 생성하지 않음
-     */
-    /**
-     * @param $path_source
-     * @param $thumb_width
-     * @param $thumb_height
+     * @param string $path_source
+     * @param integer $thumb_width
+     * @param integer $thumb_height
      *
      * @return false|null|resource
      * @throws Exception
