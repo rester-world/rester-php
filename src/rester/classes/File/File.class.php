@@ -304,7 +304,7 @@ class File
     {
         try
         {
-            return $this->data = $this->db->fetch(" SELECT * FROM example_file WHERE file_no={$file_no} LIMIT 1");
+            return $this->data = $this->db->fetch(" SELECT * FROM {$this->tbn} WHERE file_no={$file_no} LIMIT 1");
         }
         catch (Exception $e)
         {
@@ -377,7 +377,7 @@ class File
         array_walk($links, function(&$item){ $item = str_replace('/','',$item); } );
 
         // array_unique를 호출하는 이유는 실수로 ''을 더 넣을 경우 경로가 // 가 되는것을 방지하기 위함
-        $links = array_unique($links);
+        $links = array_filter($links);
 
         // 최종파일 추가 공백이 들어가면 / 추가됨
         $links[] = $file;
