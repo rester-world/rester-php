@@ -25,8 +25,7 @@ services:
 
  rester-php:
   container_name: rester-php
-  #image: kevinpark/nginx-php-redis
-  image: rester-test:0.3
+  image: kevinpark/rester-php
   restart: always
   links:
     - redis:cache.rester.kr
