@@ -119,12 +119,10 @@ class File
         if($key===null) return $this->data;
         return $this->data[$key];
     }
-
     /**
      * @return integer 파일 키
      */
     public function file_no() { return $this->data[self::field_no]; }
-
     /**
      * @return integer
      */
@@ -133,7 +131,6 @@ class File
      * @return integer
      */
     public function file_owner() { return $this->data[self::field_owner]; }
-
     /**
      * @return string 모듈명
      */
@@ -143,7 +140,6 @@ class File
      * @return string 파일명
      */
     public function file_name() { return $this->data[self::field_name]; }
-
     /**
      * @return string 저장된 파일명
      */
@@ -157,7 +153,6 @@ class File
      * @return integer 파일크기
      */
     public function file_size() { return $this->data[self::field_size]; }
-
     /**
      * @return string 파일 mime-type
      */

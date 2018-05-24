@@ -1,5 +1,7 @@
 <?php
 namespace Rester\File;
+use Exception;
+use Rester\Exception\RequireModuleName;
 
 /**
  * Class fileList
@@ -13,48 +15,98 @@ class FileList extends File
     /**
      * FileList constructor.
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function __construct()
     {
     }
 
-    public function get_by_fkey($fkey)
+    /**
+     * @param integer $fkey
+     *
+     * @return File[]
+     * @throws Exception
+     */
+    public function fkey($fkey)
     {
-        //$result = $this->db->simple_select(self::field_fkey, $fkey);
-        // return number of fileDB instance;
+        $result = array();
+        try
+        {
+            foreach ($this->db->simple_select(self::field_fkey, $fkey) as $row)
+            {
+                $result[] = new File($row);
+            }
+        }
+        catch (Exception $e)
+        {
+            throw $e;
+        }
+        return $result;
     }
 
-    public function get_by_owner()
+    /**
+     * @param integer $owner
+     *
+     * @return File[]
+     * @throws Exception
+     */
+    public function owner($owner)
     {
-        //$pdo->sql_query_list('select ');
-        // return number of fileDB instance;
+        $result = array();
+        try
+        {
+            foreach ($this->db->simple_select(self::field_owner, $owner) as $row)
+            {
+                $result[] = new File($row);
+            }
+        }
+        catch (Exception $e)
+        {
+            throw $e;
+        }
+        return $result;
     }
 
-    public function get_tmp($owner)
+    /**
+     * @param integer $fkey
+     * @param integer $owner
+     *
+     * @return File[]
+     * @throws Exception
+     */
+    public function fkey_owner($fkey, $owner)
     {
-        //$pdo->sql_query_list('select ');
+        $result = array();
+        try
+        {
+            foreach ($this->db->simple_select_2con(self::field_fkey, $fkey, self::field_owner, $owner) as $row)
+            {
+                $result[] = new File($row);
+            }
+        }
+        catch (Exception $e)
+        {
+            throw $e;
+        }
+        return $result;
     }
 
-
-  /**
-  public function db_list($key, $tmp = true)
-  {
-    if($key)
+    /**
+     * 내가 업로드한 파일중 tmp 파일
+     *
+     * @param integer $owner
+     *
+     * @return File[]
+     * @throws Exception
+     */
+    public function tmp($owner)
     {
-      $tbn = $this->cfg[self::tbn];
-      $mb_no = M::mb_no();
-      $sql = "
-        SELECT *
-        FROM {$tbn}
-        WHERE file_fkey = {$key}
-      ";
-      if($tmp) $sql .= " OR ( file_tmp=1 AND mb_no={$mb_no} ) ";
-      return D::sql_query_list($sql);
+        $result = array();
+        foreach($this->db->simple_select_2con(self::field_owner,$owner, self::field_tmp, 1) as $row)
+        {
+            $result[] = new File($row);
+        }
+        return $result;
     }
-    return false;
-  }
-   */
-
 
 }
