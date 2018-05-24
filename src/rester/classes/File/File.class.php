@@ -338,6 +338,14 @@ class File
     }
 
     /**
+     * @return string
+     */
+    protected function get_uploaded_path()
+    {
+        return $this->upload_path($this->file_local_name());
+    }
+
+    /**
      * @param string $format dateformat
      */
     public function set_path_detail($format)

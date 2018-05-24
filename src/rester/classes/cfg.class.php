@@ -95,6 +95,7 @@ class cfg
                 //rester::error('버전명이 잘못되었습니다.');
             }
         }
+        unset($_GET[self::query_version]);
 
         // 모듈명 검사
         if(preg_match('/^[a-z0-9-_]*$/i',strtolower($_GET[self::query_module]),$matches))
@@ -107,6 +108,7 @@ class cfg
             //rester::set_response_code(400);
             //rester::error('모듈명이 잘못되었습니다.');
         }
+        unset($_GET[self::query_module]);
 
         // 프로시저명 검사
         if(preg_match('/^[a-z0-9-_]*$/i',strtolower($_GET[self::query_proc]),$matches))
@@ -119,6 +121,7 @@ class cfg
             //rester::set_response_code(400);
             //rester::error('프로시저명이 잘못되었습니다.');
         }
+        unset($_GET[self::query_proc]);
 
         // 허용 method 검사
         if(in_array($_SERVER['REQUEST_METHOD'],$cfg['access_control']['allows_method']))
@@ -170,6 +173,12 @@ class cfg
             $cfg['request-body'] = $_POST;
             unset($_POST);
         }
+
+        foreach ($_GET as $k=>$v)
+        {
+            if(!isset($cfg['request-body'][$k])) $cfg['request-body'][$k] = $v;
+        }
+        unset($_GET);
 
         self::$data = $cfg;
     }
