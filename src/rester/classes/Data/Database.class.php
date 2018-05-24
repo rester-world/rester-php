@@ -1,5 +1,6 @@
 <?php
 namespace Rester\Data;
+use cfg;
 use Exception;
 use \PDO;
 /**
