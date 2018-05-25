@@ -28,3 +28,7 @@ git clone git@github.com:daium/rester-php.git
 docker-compose up -d
 ```
 
+## License
+Copyright © 2018, [kevinpark](https://github.com/daium).
+Released under the [MIT license](LICENSE).
+
