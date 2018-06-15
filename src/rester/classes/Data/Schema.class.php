@@ -139,7 +139,7 @@ class Schema
         {
             if (!isset($this->schema[$k]))
             {
-                if ($strict) throw new ExceptionBase("스키마에 없는 필드입니다.");
+                if ($strict) throw new ExceptionBase($k.'='.$v." : 스키마에 없는 필드입니다.");
                 continue;
             }
 
@@ -151,7 +151,7 @@ class Schema
                 // 정규표현식 사용
                 case self::TYPE_REGEX:
                     if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0];
-                    elseif ($strict) throw new ExceptionBase("데이터가 정규표현식과 맞지 않습니다.");
+                    elseif ($strict) throw new ExceptionBase($k.'='.$v." : 데이터가 정규표현식과 맞지 않습니다.");
                     break;
 
                 // PHP 기본함수 사용
@@ -164,8 +164,8 @@ class Schema
                     eval("\$filter = " . $schema[self::TYPE_FILTER] . ";");
                     if($schema['options']) eval("\$options = " . $schema['options'] . ";");
 
-                    if(!is_integer($filter)) throw new ExceptionBase("필터 형식이 잘못되었습니다.");
-                    if($options !== null && !is_integer($options)) throw new ExceptionBase("필터 옵션 형식이 잘못되었습니다.");
+                    if(!is_integer($filter)) throw new ExceptionBase($k.'='.$v." : 필터 형식이 잘못되었습니다.");
+                    if($options !== null && !is_integer($options)) throw new ExceptionBase($k.'='.$v." : 필터 옵션 형식이 잘못되었습니다.");
 
                     if (false !== ($clean = filter_var($v, $filter, $options)))
                     {
@@ -173,13 +173,13 @@ class Schema
                     }
                     elseif ($strict)
                     {
-                        throw new ExceptionBase("데이터가 필터를 통과하지 못했습니다.");
+                        throw new ExceptionBase($k.'='.$v." : 데이터가 필터를 통과하지 못했습니다.");
                     }
                     break;
 
                 case self::TYPE_FUNCTION:
                     $func = $this->schema[$k][self::TYPE_FUNCTION];
-                    if (!is_callable($func)) throw new ExceptionBase("호출가능한 함수를 등록하세요.");
+                    if (!is_callable($func)) throw new ExceptionBase($k.'='.$v." : 호출가능한 함수를 등록하세요.");
 
                     if ($clean = $func($v))
                     {
@@ -187,7 +187,7 @@ class Schema
                     }
                     elseif ($strict)
                     {
-                        throw new ExceptionBase("데이터가 사용자정의 함수를 통과하지 못했습니다.");
+                        throw new ExceptionBase($k.'='.$v." : 데이터가 사용자정의 함수를 통과하지 못했습니다.");
                     }
                     break;
 
@@ -199,7 +199,7 @@ class Schema
                     }
                     else
                     {
-                        throw new ExceptionBase("함수가 정의되어 있지 않습니다.");
+                        throw new ExceptionBase($k.'='.$v." : 함수가 정의되어 있지 않습니다.");
                     }
             }
 

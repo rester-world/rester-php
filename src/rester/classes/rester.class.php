@@ -12,7 +12,7 @@ class rester
     const file_verify_func = 'verify.php';
     const file_verify = 'verify.ini';
     const file_config = 'config.ini';
-    const file_schema = 'schema.ini';
+    const file_schema = 'table.ini';
 
     protected static $request_headers = array();
     protected static $request_param = array();
@@ -128,15 +128,9 @@ class rester
     /**
      * Path to procedure file
      *
-     * @param null $module_name 모듈 이름
-     * @param null $proc_name   프로시저 이름
+     * @param null|string $module_name 모듈 이름
+     * @param null|string $proc_name   프로시저 이름
      * @return bool|string      실패 | 경로
-     */
-    /**
-     * @param null $module_name
-     * @param null $proc_name
-     *
-     * @return bool|string
      */
     protected static function path_proc($module_name = null, $proc_name = null)
     {
@@ -228,10 +222,19 @@ class rester
      */
     public static function path_schema($name=null)
     {
+        $schema = self::file_schema;
+        if(!$name===null)
+        {
+            $_schema = explode('.',$schema);
+            $schema = implode('.',array(
+                $_schema[0],$name,$_schema[1]
+            ));
+        }
+
         $path = implode('/',array(
             self::path_module(),
             cfg::Get('module'),
-            (($name===null)?'':$name.'.').self::file_schema
+            $schema
         ));
 
         if(is_file($path)) return $path;
