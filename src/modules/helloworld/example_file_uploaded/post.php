@@ -18,7 +18,7 @@ try
     $f = new FileList();
     $f->set_database_table(cfg('file','table_name'));
 
-    foreach ($f->tmp(1) as $file)
+    foreach ($f->tmp(0) as $file)
     {
         $body['data'][] = '파일명 : '.$file->file_name();
         $body['data'][] = '저장된파일명: '.$file->file_local_name();
@@ -27,6 +27,7 @@ try
         $body['data'][] = '업로드 시각 : '.$file->file_datetime();
         $body['data'][] = '임시파일 유무 : '.$file->file_tmp();
         $body['data'][] = '----------------------------------------';
+        $f->delete();
     }
 }
 catch (Exception $e)

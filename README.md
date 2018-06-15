@@ -1,16 +1,34 @@
-# Simple RESTFul API Framework : RESTer
-REST API를 구현하기 위한 프레임웍
+# Simple RESTFul API Framework
 
-간결하고 심플한 구현을 가능하게 해 줌
+[![MIT License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat)](https://github.com/daium/rester-php/blob/master/LICENSE)
 
-Docker 기반으로 동작하며 PHP 기반으로 구현가능함
+rester는 RESTFul API 프레임웍으로 간결한 구조로 직관적인 소스개발이 가능하다.
 
-추후 nodejs, phython 등의 언어를 지원하도록 함
+해당 언어 이외에 다른 언어의 문법등을 학습하지 않아도 충분히 사용가능하다.
 
-- rester-php
-- rester-nodejs (예정)
-- rester-phython (예정)
-- rester-c++ (예정)
-- rester-jsp (예정)
-- rester-ruby (예정)
-- rester-java (예정)
+내부적으로 MVC 패턴등이 적용되었지만 사용자는 이를 몰라도 이용가능하다.
+
+
+## Introduction
+이 프로젝트는 rester의 php 버전으로 php를 사용해 restful api를 쉽게 구현할 수 있도록 한다.
+
+## Requirements
+- nginx or apache
+- php7.x
+- mariadb (optional)
+- redis (optional)
+- docker (optional)
+
+Docker 기반으로 동작도록 되어 있으며 docker-compose로 운영 가능하도록 compose 파일을 지원한다.
+
+## Installation
+
+```zsh
+git clone git@github.com:daium/rester-php.git
+docker-compose up -d
+```
+
+## License
+Copyright © 2018, [kevinpark](https://github.com/daium).
+Released under the [MIT license](LICENSE).
+
