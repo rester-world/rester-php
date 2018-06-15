@@ -25,15 +25,14 @@ services:
 
  rester-php:
   container_name: rester-php
-  image: kevinpark/rester-php
+  image: kevinpark/nginx-php-redis
   restart: always
   links:
     - redis:cache.rester.kr
     - db:db.rester.kr
   volumes:
-  - ./files:/var/www/html/rester/files
-  - ./src/rester/lib:/var/www/html/rester/lib
-  - ./src/modules:/var/www/html/modules
-  - ./cfg:/var/www/cfg:ro
+   - ./default.conf:/etc/nginx/sites-available/default.conf:ro
+   - ./src:/var/www/html
+   - ./cfg:/var/www/cfg:ro
   ports:
   - '80:80'
