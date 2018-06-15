@@ -19,7 +19,15 @@ define('__RESTER__', TRUE);
 spl_autoload_register(function($class_name)
 {
     $class_name = implode('/',array_filter(explode('\\',$class_name), function($item) { return ($item!='Rester');}));
-    include_once(dirname(__FILE__).'/classes/'.$class_name.'.class.php');
+
+    $classExt = dirname(__FILE__).'/classExt/'.$class_name.'.class.php';
+    $classPath = dirname(__FILE__).'/classes/'.$class_name.'.class.php';
+    if(is_file($classExt)) include_once $classExt;
+    else if(is_file($classPath)) include_once $classPath;
+    else {
+        echo "No search class file : ".$class_name;
+        exit;
+    }
 });
 
 // catch 되지 않은 예외에 대한 처리함수
