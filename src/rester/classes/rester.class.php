@@ -223,7 +223,7 @@ class rester
     public static function path_schema($name=null)
     {
         $schema = self::file_schema;
-        if(!$name===null)
+        if(!($name===null))
         {
             $_schema = explode('.',$schema);
             $schema = implode('.',array(
