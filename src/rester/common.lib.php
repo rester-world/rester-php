@@ -69,9 +69,11 @@ function fnEX($module, $name)
     $result = false;
     if($path = rester::path_fn($name,$module))
     {
+        $old = rester::change_module($module);
         /** @noinspection PhpUnusedLocalVariableInspection */
         $arg = array_slice(func_get_args(),2);
         $result = include $path;
+        rester::change_module($old);
     }
     return $result;
 }
@@ -145,9 +147,11 @@ function sqlEX($module, $name)
     $sql_result = false;
     if($path = rester::path_sql($name,$module))
     {
+        $old = rester::change_module($module);
         /** @noinspection PhpUnusedLocalVariableInspection */
         $arg = array_slice(func_get_args(),2);
         $sql_result = include $path;
+        rester::change_module($old);
     }
     return $sql_result;
 }

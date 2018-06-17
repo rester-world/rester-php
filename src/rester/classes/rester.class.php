@@ -24,6 +24,20 @@ class rester
     protected static $err = false;
     protected static $err_msg = array();
 
+    protected static $current_module;
+
+    /**
+     * @param $module string
+     *
+     * @return string
+     */
+    public static function change_module($module)
+    {
+        $old_module = self::$current_module;
+        self::$current_module = $module;
+        return $old_module;
+    }
+
     /**
      * Add error message & set failure
      *
@@ -59,6 +73,8 @@ class rester
      */
     public static function run()
     {
+        self::$current_module = cfg::Get('module');
+
         // check request parameter
         if($path_verify = self::path_verify())
         {
@@ -134,7 +150,7 @@ class rester
      */
     protected static function path_proc($module_name = null, $proc_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
         if(null === $proc_name) $proc_name = cfg::Get('proc');
 
         $path = implode('/',array(
@@ -158,7 +174,7 @@ class rester
      */
     public static function path_fn($name, $module_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
 
         $path = implode('/',array(
             self::path_module(),
@@ -180,7 +196,7 @@ class rester
      */
     public static function path_sql($name, $module_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
 
         $path = implode('/',array(
             self::path_module(),
@@ -201,7 +217,7 @@ class rester
      */
     public static function path_cfg($module_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
 
         $path = implode('/',array(
             self::path_module(),
@@ -233,7 +249,7 @@ class rester
 
         $path = implode('/',array(
             self::path_module(),
-            cfg::Get('module'),
+            self::$current_module,
             $schema
         ));
 
@@ -251,7 +267,7 @@ class rester
      */
     protected static function path_verify($module_name = null, $proc_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
         if(null === $proc_name) $proc_name = cfg::Get('proc');
 
         $path = implode('/',array(
@@ -275,7 +291,7 @@ class rester
      */
     protected static function path_verify_func($module_name = null, $proc_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
         if(null === $proc_name) $proc_name = cfg::Get('proc');
 
         $path = implode('/',array(
@@ -299,7 +315,7 @@ class rester
      */
     protected static function path_auth($module_name = null, $proc_name = null)
     {
-        if(null === $module_name) $module_name = cfg::Get('module');
+        if(null === $module_name) $module_name = self::$current_module;
         if(null === $proc_name) $proc_name = cfg::Get('proc');
 
         $path = implode('/',array(
