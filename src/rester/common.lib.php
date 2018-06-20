@@ -161,24 +161,52 @@ function sqlEX($module, $name)
  * @param null|integer $timeout
  *
  * @return bool|null|string
- * @throws \Rester\Exception\ExceptionBase
  */
 function cache($data=null,$timeout=30)
 {
     $module = cfg::Get('module');
     $proc = cfg::Get('proc');
-
-    if($data===null)
-    {
-        $data = cacheEX($module, $proc);
-    }
-    else
-    {
-        cacheEX($module,$proc,$data,$timeout);
-    }
-
-    return $data;
+    return cacheEX($module,$proc,$data,$timeout);
 }
+
+/**
+ * @param string $key
+ * @param null|string $data
+ * @param int  $timeout
+ *
+ * @return bool|null|string
+ */
+function cacheKey($key, $data=null, $timeout=60)
+{
+    $module = cfg::Get('module');
+    $proc = cfg::Get('proc');
+    return cacheEX($module,$proc,$data,$timeout,$key);
+}
+
+/**
+ * @param string $image_key
+ * @param null|string $data
+ * @param int  $timeout
+ *
+ * @return bool|null|string
+ */
+function cacheImage($image_key, $data=null, $timeout=3600)
+{
+    return cacheKey($image_key,$data,$timeout);
+}
+
+/**
+ * @param string $file_key
+ * @param null|string $data
+ * @param int  $timeout
+ *
+ * @return bool|null|string
+ */
+function cacheFile($file_key, $data=null, $timeout=3600)
+{
+    return cacheKey($file_key,$data,$timeout);
+}
+
 
 /**
  * @param string       $module
@@ -186,13 +214,15 @@ function cache($data=null,$timeout=30)
  * @param null|string  $data
  * @param null|integer $timeout
  *
+ * @param string         $additional_key
+ *
  * @return bool|null|string
- * @throws \Rester\Exception\ExceptionBase
  */
-function cacheEX($module, $proc, $data=null, $timeout=30)
+function cacheEX($module, $proc, $data=null, $timeout=30, $additional_key=null)
 {
     $method = cfg::Get('method');
     $key = $module.'_'.$proc.'_'.$method;
+    if($additional_key!==null) $key.= '_'.$additional_key;
 
     $redis_cfg = cfg::Get('cache');
     $redis = new Redis();
