@@ -145,6 +145,7 @@ class Schema
 
             $schema = $this->schema[$k];
             $type = $schema['type'];
+            $require = $schema['require'];
 
             switch ($type)
             {
@@ -152,6 +153,7 @@ class Schema
                 case self::TYPE_REGEX:
                     if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0];
                     elseif ($strict) throw new ExceptionBase($k.'='.$v." : 데이터가 정규표현식과 맞지 않습니다.");
+                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다.");
                     break;
 
                 // PHP 기본함수 사용
@@ -175,6 +177,7 @@ class Schema
                     {
                         throw new ExceptionBase($k.'='.$v." : 데이터가 필터를 통과하지 못했습니다.");
                     }
+                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다..");
                     break;
 
                 case self::TYPE_FUNCTION:
@@ -189,6 +192,7 @@ class Schema
                     {
                         throw new ExceptionBase($k.'='.$v." : 데이터가 사용자정의 함수를 통과하지 못했습니다.");
                     }
+                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다..");
                     break;
 
                 default:
