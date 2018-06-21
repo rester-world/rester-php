@@ -27,6 +27,9 @@ function GetRealIPAddr()
  */
 if (!function_exists('getallheaders'))
 {
+    /**
+     * @return array request headers
+     */
     function getallheaders()
     {
         $headers = [];
@@ -42,6 +45,8 @@ if (!function_exists('getallheaders'))
 }
 
 /**
+ * current_module/fn.***.php 파일을 호출
+ *
  * @param string $name
  *
  * @return bool|mixed
@@ -59,6 +64,8 @@ function fn($name)
 }
 
 /**
+ * module/fn.***.php 파일 호출
+ *
  * @param string $module
  * @param string $name
  *
@@ -79,6 +86,8 @@ function fnEX($module, $name)
 }
 
 /**
+ * module/config.ini 설정을 반환함
+ *
  * @param null|string $section
  * @param null|string $key
  *
@@ -93,7 +102,11 @@ function cfg($section=null,$key=null)
     }
     if($section===null) return $cfg;
     if($key===null) return $cfg[$section];
-    return $cfg[$section][$key];
+
+    $result = $cfg[$section][$key];
+    if(!$result) $result = cfg::Get($section,$key);
+
+    return $result;
 }
 
 /**
@@ -184,27 +197,37 @@ function cacheKey($key, $data=null, $timeout=60)
 }
 
 /**
- * @param string $image_key
- * @param null|string $data
- * @param int  $timeout
+ * @param string      $image_key
+ * @param null|string $url
+ * @param int         $timeout
  *
- * @return bool|null|string
+ * @return array
  */
-function cacheImage($image_key, $data=null, $timeout=3600)
+function cacheImage($image_key, $url=null, $timeout=3600)
 {
-    return cacheKey($image_key,$data,$timeout);
+    $data = file_get_contents($url);
+    $mime_type = mime_content_type($url);
+    return array(
+        'mime-type'=> cacheKey($image_key.'_mime',$mime_type,$timeout),
+        'data'=> cacheKey($image_key,$data,$timeout)
+    );
 }
 
 /**
- * @param string $file_key
- * @param null|string $data
- * @param int  $timeout
+ * @param string      $file_key
+ * @param null|string $url
+ * @param int         $timeout
  *
- * @return bool|null|string
+ * @return array
  */
-function cacheFile($file_key, $data=null, $timeout=3600)
+function cacheFile($file_key, $url=null, $timeout=3600)
 {
-    return cacheKey($file_key,$data,$timeout);
+    $data = file_get_contents($url);
+    $mime_type = mime_content_type($url);
+    return array(
+        'mime-type'=> cacheKey($file_key.'_mime',$mime_type,$timeout),
+        'data'=> cacheKey($file_key,$data,$timeout)
+    );
 }
 
 
@@ -229,7 +252,7 @@ function cacheEX($module, $proc, $data=null, $timeout=30, $additional_key=null)
     $redis->connect($redis_cfg['host'], $redis_cfg['port']);
     if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
 
-    if($data===null)
+    if(!$data)
     {
         $data = $redis->get($key);
     }
