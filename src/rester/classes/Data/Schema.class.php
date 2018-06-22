@@ -145,6 +145,7 @@ class Schema
 
             $schema = $this->schema[$k];
             $type = $schema['type'];
+            $require = $schema['require'];
 
             switch ($type)
             {
@@ -152,6 +153,7 @@ class Schema
                 case self::TYPE_REGEX:
                     if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0];
                     elseif ($strict) throw new ExceptionBase($k.'='.$v." : 데이터가 정규표현식과 맞지 않습니다.");
+                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터에 값이 없거나 검증을 통과하지 못했습니다.");
                     break;
 
                 // PHP 기본함수 사용
@@ -175,22 +177,28 @@ class Schema
                     {
                         throw new ExceptionBase($k.'='.$v." : 데이터가 필터를 통과하지 못했습니다.");
                     }
+                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터에 값이 없거나 검증을 통과하지 못했습니다.");
                     break;
 
+                // 사용자 정의함수
+                // 사용자 정의 함수는 호출 가능할 때만 실행
                 case self::TYPE_FUNCTION:
                     $func = $this->schema[$k][self::TYPE_FUNCTION];
-                    if (!is_callable($func)) throw new ExceptionBase($k.'='.$v." : 호출가능한 함수를 등록하세요.");
-
-                    if ($clean = $func($v))
+                    if (is_callable($func))
                     {
-                        $result[$k] = $clean;
-                    }
-                    elseif ($strict)
-                    {
-                        throw new ExceptionBase($k.'='.$v." : 데이터가 사용자정의 함수를 통과하지 못했습니다.");
+                        if ($clean = $func($v))
+                        {
+                            $result[$k] = $clean;
+                        }
+                        elseif ($strict)
+                        {
+                            throw new ExceptionBase($k.'='.$v." : 데이터가 사용자정의 함수를 통과하지 못했습니다.");
+                        }
+                        elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터에 값이 없거나 검증을 통과하지 못했습니다.");
                     }
                     break;
 
+                // rester 정의 함수
                 default:
                     $func = 'validate_' . $this->schema[$k]['type'];
                     if (method_exists($this, $func))
@@ -205,6 +213,25 @@ class Schema
 
         }
         return $result;
+    }
+
+    /**
+     * 필수입력 데이터 검사
+     * 하나라도 누락되면 Exception을 반환한다.
+     *
+     * @param array $data
+     *
+     * @throws ExceptionBase
+     */
+    public function check_require($data)
+    {
+        foreach($this->schema as $k=>$v)
+        {
+            if($v['require']=='true')
+            {
+                if(!$data[$k]) throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다.");
+            }
+        }
     }
 
 
