@@ -494,24 +494,4 @@ class File
         }
     }
 
-    /**
-     * @param int $file_no
-     * @param int $timeout
-     *
-     * @throws Exception
-     */
-    public function set_cache($file_no, $timeout=3600)
-    {
-        // TODO redis server 접속여부 확인
-        try
-        {
-            $this->fetch($file_no);
-        }
-        catch (Exception $e)
-        {
-            throw new Exception("시스템오류 관리자에게 문의하세요.");
-        }
-        cacheFile($file_no,$this->get_uploaded_path(),$timeout);
-    }
-
 }
