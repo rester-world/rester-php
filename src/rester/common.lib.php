@@ -27,6 +27,9 @@ function GetRealIPAddr()
  */
 if (!function_exists('getallheaders'))
 {
+    /**
+     * @return array request headers
+     */
     function getallheaders()
     {
         $headers = [];
@@ -42,6 +45,8 @@ if (!function_exists('getallheaders'))
 }
 
 /**
+ * current_module/fn.***.php 파일을 호출
+ *
  * @param string $name
  *
  * @return bool|mixed
@@ -59,6 +64,8 @@ function fn($name)
 }
 
 /**
+ * module/fn.***.php 파일 호출
+ *
  * @param string $module
  * @param string $name
  *
@@ -79,6 +86,8 @@ function fnEX($module, $name)
 }
 
 /**
+ * module/config.ini 설정을 반환함
+ *
  * @param null|string $section
  * @param null|string $key
  *
@@ -93,7 +102,11 @@ function cfg($section=null,$key=null)
     }
     if($section===null) return $cfg;
     if($key===null) return $cfg[$section];
-    return $cfg[$section][$key];
+
+    $result = $cfg[$section][$key];
+    if(!$result) $result = cfg::Get($section,$key);
+
+    return $result;
 }
 
 /**
@@ -161,24 +174,62 @@ function sqlEX($module, $name)
  * @param null|integer $timeout
  *
  * @return bool|null|string
- * @throws \Rester\Exception\ExceptionBase
  */
 function cache($data=null,$timeout=30)
 {
     $module = cfg::Get('module');
     $proc = cfg::Get('proc');
-
-    if($data===null)
-    {
-        $data = cacheEX($module, $proc);
-    }
-    else
-    {
-        cacheEX($module,$proc,$data,$timeout);
-    }
-
-    return $data;
+    return cacheEX($module,$proc,$data,$timeout);
 }
+
+/**
+ * @param string $key
+ * @param null|string $data
+ * @param int  $timeout
+ *
+ * @return bool|null|string
+ */
+function cacheKey($key, $data=null, $timeout=60)
+{
+    $module = cfg::Get('module');
+    $proc = cfg::Get('proc');
+    return cacheEX($module,$proc,$data,$timeout,$key);
+}
+
+/**
+ * @param string      $image_key
+ * @param null|string $url
+ * @param int         $timeout
+ *
+ * @return array
+ */
+function cacheImage($image_key, $url=null, $timeout=3600)
+{
+    $data = file_get_contents($url);
+    $mime_type = mime_content_type($url);
+    return array(
+        'mime-type'=> cacheKey($image_key.'_mime',$mime_type,$timeout),
+        'data'=> cacheKey($image_key,$data,$timeout)
+    );
+}
+
+/**
+ * @param string      $file_key
+ * @param null|string $url
+ * @param int         $timeout
+ *
+ * @return array
+ */
+function cacheFile($file_key, $url=null, $timeout=3600)
+{
+    $data = file_get_contents($url);
+    $mime_type = mime_content_type($url);
+    return array(
+        'mime-type'=> cacheKey($file_key.'_mime',$mime_type,$timeout),
+        'data'=> cacheKey($file_key,$data,$timeout)
+    );
+}
+
 
 /**
  * @param string       $module
@@ -186,20 +237,22 @@ function cache($data=null,$timeout=30)
  * @param null|string  $data
  * @param null|integer $timeout
  *
+ * @param string         $additional_key
+ *
  * @return bool|null|string
- * @throws \Rester\Exception\ExceptionBase
  */
-function cacheEX($module, $proc, $data=null, $timeout=30)
+function cacheEX($module, $proc, $data=null, $timeout=30, $additional_key=null)
 {
     $method = cfg::Get('method');
     $key = $module.'_'.$proc.'_'.$method;
+    if($additional_key!==null) $key.= '_'.$additional_key;
 
     $redis_cfg = cfg::Get('cache');
     $redis = new Redis();
     $redis->connect($redis_cfg['host'], $redis_cfg['port']);
     if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
 
-    if($data===null)
+    if(!$data)
     {
         $data = $redis->get($key);
     }
@@ -248,5 +301,24 @@ function verify_param($key, $function)
 
     $data = $function(cfg::Get('request-body',$key));
     if($data) rester::set_request_param($key, $data);
+}
+
+/**
+ * @param $url string
+ * @param $saveto string
+ */
+function grab_image($url,$saveto){
+    $ch = curl_init ($url);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_BINARYTRANSFER,1);
+    $raw=curl_exec($ch);
+    curl_close ($ch);
+    if(file_exists($saveto)){
+        unlink($saveto);
+    }
+    $fp = fopen($saveto,'x');
+    fwrite($fp, $raw);
+    fclose($fp);
 }
 

@@ -34,8 +34,9 @@ class FileImage extends File
             throw $e;
         }
 
-        header('Content-Type: '.$this->file_type());
-        $this->load($this->get_uploaded_path(),true);
+        $res = $this->load($this->get_uploaded_path());
+        $this->printImage($res,$this->file_type());
+        imagedestroy($res);
         exit;
     }
 
@@ -47,21 +48,20 @@ class FileImage extends File
      * $echo 변수에 따라 바로 출력하거나 리소스를 반환한다.
      *
      * @param string $path 이미지 경로
-     * @param bool $echo
      *
      * @return false|resource 이미지 리소스 반환 실패시 false
      *
      * @throws Exception
      */
-    protected function load($path, $echo = false)
+    protected function load($path)
     {
         if(is_file($path))
         {
-            switch(mime_content_type($path))
+            $mime_type = mime_content_type($path);
+            switch($mime_type)
             {
                 case 'image/jpeg':
                     $resource = imagecreatefromjpeg($path);
-                    if($echo) imagejpeg($resource);
                     break;
                 case 'image/png':
                     $resource = imagecreatefrompng($path);
@@ -69,13 +69,11 @@ class FileImage extends File
                     imagecolortransparent($resource, $background);
                     imagealphablending($resource, false);
                     imagesavealpha($resource, true);
-                    if($echo) imagepng($resource);
                     break;
                 case "image/gif":
                     $resource = imagecreatefromgif($path);
                     $background = imagecolorallocate($resource, 0, 0, 0);
                     imagecolortransparent($resource, $background);
-                    if($echo) imagegif($resource);
                     break;
                 default : throw new Exception("지원되는 이미지 타입이 아닙니다.");
             }
@@ -118,10 +116,33 @@ class FileImage extends File
         }
 
         // 썸네일 이미지 출력
-        header('Content-Type: image/jpeg');
-        imagejpeg($thumb);
+        $this->printImage($thumb, 'image/jpeg');
         imagedestroy($thumb);
         exit;
+    }
+
+    /**
+     * @param resource $res
+     * @param string   $mime_type
+     *
+     * @throws Exception
+     */
+    public function printImage($res, $mime_type)
+    {
+        header('Content-Type: '.$mime_type);
+        switch($mime_type)
+        {
+            case 'image/jpeg':
+                imagejpeg($res);
+                break;
+            case 'image/png':
+                imagepng($res);
+                break;
+            case "image/gif":
+                imagegif($res);
+                break;
+            default : throw new Exception("지원되는 이미지 타입이 아닙니다.");
+        }
     }
 
     /**

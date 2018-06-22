@@ -80,17 +80,50 @@ class rester
         {
             $schema = new \Rester\Data\Schema($path_verify);
 
-            if($data = $schema->validate(cfg::Get('request-headers')))
-                foreach($data as $k => $v) rester::set_request_header($k, $v);
+            // check header
+            try
+            {
+                if($data = $schema->validate(cfg::Get('request-headers')))
+                    foreach($data as $k => $v)
+                        rester::set_request_header($k, $v);
+            }
+            catch (Exception $e)
+            {
+                self::error('request-headers : '.$e->__toString());
+            }
 
-            if($data = $schema->validate(cfg::Get('request-body')))
-                foreach($data as $k => $v) rester::set_request_param($k, $v);
+            // check body | query string
+            try
+            {
+                if($data = $schema->validate(cfg::Get('request-body')))
+                    foreach($data as $k => $v)
+                        rester::set_request_param($k, $v);
+            }
+            catch (Exception $e)
+            {
+                self::error('request-body | query: '.$e->__toString());
+            }
+
         }
 
         // check request param with func
         if($path_verify_func = self::path_verify_func())
         {
             include $path_verify_func;
+        }
+
+        // 검증파일이 있으면 필수입력 검사
+        if($path_verify = self::path_verify())
+        {
+            $schema = new \Rester\Data\Schema($path_verify);
+            try
+            {
+                $schema->check_require(self::all_params());
+            }
+            catch (Exception $e)
+            {
+                self::error($e->__toString());
+            }
         }
 
 
@@ -353,24 +386,34 @@ class rester
     }
 
     /**
-     * @param string $key
+     * @param null|string $key
      * @return mixed
      */
-    public static function param_header($key)
+    public static function param_header($key=null)
     {
         if(isset(self::$request_headers[$key])) return self::$request_headers[$key];
+        if($key == null) return self::$request_headers;
         return false;
     }
 
     /**
      * 요청값 반환
-     * @param string $key
+     * @param null|string $key
      * @return bool|mixed
      */
-    public static function param($key)
+    public static function param($key=null)
     {
         if(isset(self::$request_param[$key])) return self::$request_param[$key];
+        if($key == null) return self::$request_param;
         return false;
+    }
+
+    /**
+     * @return array
+     */
+    public static function all_params()
+    {
+        return array_merge(self::$request_param,self::$request_headers);
     }
 
     /**
