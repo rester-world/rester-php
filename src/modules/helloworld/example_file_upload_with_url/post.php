@@ -16,11 +16,14 @@ try
 {
     $f = new FileUrlUpload();
     $file = $f->run(rester::param('url'));
+    $tbn = cfg('file','table_name');
+    $file->set_database_table($tbn);
+    $id = $file->insert();
     $body['data'][] = '파일명 : '.$file->file_name();
     $body['data'][] = '저장된파일명: '.$file->file_local_name();
     $body['data'][] = '파일크기 : '.$file->file_size();
     $body['data'][] = 'MIME : '.$file->file_type();
-    $body['data'][] = '업로드 시각 : '.$file->file_datetime();
+    $body['data'][] = 'Key : '.$id;
     $body['data'][] = '----------------------------------------';
 }
 catch (Exception $e)
