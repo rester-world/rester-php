@@ -184,7 +184,7 @@ class Schema
                 // 사용자 정의 함수는 호출 가능할 때만 실행
                 case self::TYPE_FUNCTION:
                     $func = $this->schema[$k][self::TYPE_FUNCTION];
-                    if (!is_callable($func))
+                    if (is_callable($func))
                     {
                         if ($clean = $func($v))
                         {
