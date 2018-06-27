@@ -54,7 +54,7 @@ date_default_timezone_set(cfg::Get('default','timezone'));
 
 // set php.ini
 set_time_limit(0);
-ini_set("memory_limit", "10M");     // 메모리 용량 설정.
+ini_set("memory_limit", "500M");     // 메모리 용량 설정.
 ini_set("session.use_trans_sid", 0); // PHPSESSID를 자동으로 넘기지 않음
 ini_set("url_rewriter.tags","");     // 링크에 PHPSESSID가 따라다니는것을 무력화
 ini_set( 'session.save_handler', 'files' );
@@ -144,3 +144,5 @@ foreach (cfg::Get('response_headers') as $key=>$value)
 {
     rester::set_response_header($key,$value);
 }
+
+header("Access-Control-Allow-Origin : *");
