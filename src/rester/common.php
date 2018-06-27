@@ -65,7 +65,6 @@ else @session_cache_limiter("no-cache, must-revalidate");
 session_cache_expire();
 session_set_cookie_params ( 0, "/", cfg::Get('default','session_domain'));
 
-
 // session is 세팅
 if($_GET['PHPSESSID']) session_id($_GET['PHPSESSID']);
 
@@ -145,4 +144,3 @@ foreach (cfg::Get('response_headers') as $key=>$value)
     rester::set_response_header($key,$value);
 }
 
-header("Access-Control-Allow-Origin : *");
