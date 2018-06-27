@@ -54,10 +54,13 @@ date_default_timezone_set(cfg::Get('default','timezone'));
 
 // set php.ini
 set_time_limit(0);
-ini_set("memory_limit", "500M");     // 메모리 용량 설정.
 ini_set("session.use_trans_sid", 0); // PHPSESSID를 자동으로 넘기지 않음
 ini_set("url_rewriter.tags","");     // 링크에 PHPSESSID가 따라다니는것을 무력화
 ini_set( 'session.save_handler', 'files' );
+
+ini_set("memory_limit", "1000M");     // 메모리 용량 설정.
+ini_set("post_max_size","1000M");
+ini_set("upload_max_filesize","1000M");
 
 if (isset($SESSION_CACHE_LIMITER)) @session_cache_limiter($SESSION_CACHE_LIMITER);
 else @session_cache_limiter("no-cache, must-revalidate");
