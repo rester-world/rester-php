@@ -56,7 +56,7 @@ class rester
     {
         foreach (self::$response_headers as $k=>$v)
         {
-            header($k.': '.$v);
+            header(trim($k).': '.$v);
         }
     }
 
@@ -422,7 +422,7 @@ class rester
      */
     public static function set_response_header($key, $value)
     {
-        self::$response_headers[$key] = $value;
+        self::$response_headers[trim($key)] = $value;
     }
 
     /**
