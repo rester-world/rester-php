@@ -18,6 +18,7 @@ class Schema
     const TYPE_DATETIME = 'datetime';
     const TYPE_DATE = 'date';
     const TYPE_TIME = 'time';
+    const TYPE_ARRAY = 'array';
 
     /**
      * @var array 지원되는 타입 목록
@@ -30,6 +31,7 @@ class Schema
         self::TYPE_DATETIME,
         self::TYPE_DATE,
         self::TYPE_TIME,
+        self::TYPE_ARRAY,
     );
 
     private $schema = array();
@@ -101,6 +103,17 @@ class Schema
         throw new ExceptionBase("시간 형식이 맞지 않습니다.");
     }
 
+    /**
+     * @param array $data
+     *
+     * @return array
+     * @throws ExceptionBase
+     */
+    protected function validate_array($data)
+    {
+        if(is_array($data)) return $data;
+        throw new ExceptionBase("배열이 아닙니다.");
+    }
 
 
     /**
