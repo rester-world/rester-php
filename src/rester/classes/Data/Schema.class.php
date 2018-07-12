@@ -242,7 +242,11 @@ class Schema
         {
             if($v['require']=='true')
             {
-                if(!$data[$k]) throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다.");
+                // null 또는 공백일경우
+                if($data[$k]===null || $data[$k]==='')
+                {
+                    throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다.");
+                }
             }
         }
     }
