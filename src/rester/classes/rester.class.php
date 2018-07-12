@@ -370,7 +370,7 @@ class rester
      */
     public static function set_request_header($key, $value)
     {
-        if($key && $value) self::$request_headers[$key] = $value;
+        if($key && ($value || $value===0)) self::$request_headers[$key] = $value;
     }
 
 
@@ -382,7 +382,7 @@ class rester
      */
     public static function set_request_param($key, $value)
     {
-        if($key && $value) self::$request_param[$key] = $value;
+        if($key && ($value || $value===0)) self::$request_param[$key] = $value;
     }
 
     /**
