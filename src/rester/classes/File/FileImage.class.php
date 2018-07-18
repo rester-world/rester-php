@@ -36,7 +36,7 @@ class FileImage extends File
 
         $res = $this->load($this->get_uploaded_path());
         $this->printImage($res,$this->file_type());
-        imagedestroy($res);
+        if(is_resource($res)) imagedestroy($res);
         exit;
     }
 
@@ -74,6 +74,9 @@ class FileImage extends File
                     $resource = imagecreatefromgif($path);
                     $background = imagecolorallocate($resource, 0, 0, 0);
                     imagecolortransparent($resource, $background);
+                    break;
+                case 'image/svg+xml':
+                    $resource = file_get_contents($path);
                     break;
                 default : throw new Exception("지원되는 이미지 타입이 아닙니다.");
             }
@@ -140,6 +143,9 @@ class FileImage extends File
                 break;
             case "image/gif":
                 imagegif($res);
+                break;
+            case 'image/svg+xml':
+                echo $res;
                 break;
             default : throw new Exception("지원되는 이미지 타입이 아닙니다.");
         }
