@@ -340,7 +340,7 @@ class File
     /**
      * @return string
      */
-    protected function get_uploaded_path()
+    public function get_uploaded_path()
     {
         return $this->upload_path($this->file_local_name());
     }
