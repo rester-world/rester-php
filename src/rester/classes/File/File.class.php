@@ -480,13 +480,15 @@ class File
     /**
      * 임시파일 -> 일반 파일로 변경
      *
+     * @param int $fkey
+     *
      * @throws Exception
      */
-    public function update_tmp()
+    public function update_tmp($fkey=0)
     {
         try
         {
-            $this->db->simple_update(array(self::field_tmp => 0), self::field_no, $this->file_no());
+            $this->db->simple_update(array(self::field_tmp => 0, self::field_fkey => $fkey), self::field_no, $this->file_no());
         }
         catch (Exception $e)
         {
