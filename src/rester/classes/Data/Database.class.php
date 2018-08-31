@@ -343,7 +343,7 @@ class Database extends PDO
         }
         catch (Exception $e)
         {
-            throw new $e;
+            throw $e;
         }
     }
 
