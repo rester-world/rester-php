@@ -29,6 +29,7 @@ $body['data'] = array(
     'test_date: '.rester::param('test_date'),
     'test_time: '.rester::param('test_time'),
     'test_id: '.rester::param('test_id'),
+    'test_require: '.rester::param('test_require'),
     'test_array: '.json_encode(rester::param('test_array')),
 );
 

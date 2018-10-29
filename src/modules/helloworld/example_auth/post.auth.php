@@ -1,6 +1,6 @@
 <?php if(!defined("__RESTER__")) exit;
 
-// 호출 순서
+// Call sequence
 // 1. post.verify.ini __OK
 // 2. post.auth.php __OK
 // 3. post.php

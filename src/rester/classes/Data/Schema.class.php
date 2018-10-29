@@ -2,7 +2,7 @@
 namespace Rester\Data;
 use \Rester\Exception\ExceptionBase;
 /**
- * Class schema
+ * Class Schema
  * kevinpark@webace.co.kr
  *
  * 스키마 정의를 받아서 validation을 수행해 줌
@@ -10,6 +10,12 @@ use \Rester\Exception\ExceptionBase;
  */
 class Schema
 {
+    const FIELD_TYPE = 'type';
+    const FIELD_REQUIRE = 'require';
+    const FIELD_DEFAULT = 'default';
+    const FIELD_REGEXP = 'regexp';
+    const FIELD_OPTIONS = 'options';
+
     const TYPE_REGEX = 'regexp';
     const TYPE_FUNCTION = 'function';
     const TYPE_FILTER = 'filter';
@@ -134,94 +140,63 @@ class Schema
 
     /**
      * @param array $data
-     * @param bool  $strict
      *
      * @return array
      * @throws ExceptionBase
      */
-    public function validate($data, $strict=false)
+    public function validate($data)
     {
         // check param
         if(is_array($data) && sizeof($data)==0) return array();
-        if(!is_array($data) || !is_assoc($data)) throw new ExceptionBase("1번째 파라미터는 연관배열이 필요합니다.");
-        if(!is_bool($strict)) throw new ExceptionBase("2번째 파라미터는 boolean  필요합니다.");
+        if(!is_array($data) || !is_assoc($data)) throw new ExceptionBase("The first parameter requires an associative array.");
 
         $result = array();
 
         foreach ($data as $k=>$v)
         {
-            if (!isset($this->schema[$k]))
-            {
-                if ($strict) throw new ExceptionBase($k.'='.$v." : 스키마에 없는 필드입니다.");
-                continue;
-            }
-
-            $schema = $this->schema[$k];
-            $type = $schema['type'];
-            $require = $schema['require'];
+            if(!($schema = $this->schema[$k])) continue;
+            $type = $schema[self::FIELD_TYPE];
+            $require = $schema[self::FIELD_REQUIRE]=='true'?true:false;
+            // set default value
+            if(isset($schema[self::FIELD_DEFAULT])) $result[$k] = $schema[self::FIELD_DEFAULT];
 
             switch ($type)
             {
-                // 정규표현식 사용
-                case self::TYPE_REGEX:
-                    if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0];
-                    elseif ($strict) throw new ExceptionBase($k.'='.$v." : 데이터가 정규표현식과 맞지 않습니다.");
-                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터에 값이 없거나 검증을 통과하지 못했습니다.");
-                    break;
+                // Using Regular Expressions : preg_match
+                case self::TYPE_REGEX: if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0]; break;
 
-                // PHP 기본함수 사용
                 // php validate function
-                // eval 로 문자열로 된 옵션을 실제 값으로 변경
+                // filter_val
                 case self::TYPE_FILTER:
 
                     $filter = null;
                     $options = null;
                     eval("\$filter = " . $schema[self::TYPE_FILTER] . ";");
-                    if($schema['options']) eval("\$options = " . $schema['options'] . ";");
+                    if($schema[self::FIELD_OPTIONS]) eval("\$options = " . $schema[self::FIELD_OPTIONS] . ";");
 
-                    if(!is_integer($filter)) throw new ExceptionBase($k.'='.$v." : 필터 형식이 잘못되었습니다.");
-                    if($options !== null && !is_integer($options)) throw new ExceptionBase($k.'='.$v." : 필터 옵션 형식이 잘못되었습니다.");
-
-                    if (false !== ($clean = filter_var($v, $filter, $options)))
-                    {
-                        $result[$k] = $clean;
-                    }
-                    elseif ($strict)
-                    {
-                        throw new ExceptionBase($k.'='.$v." : 데이터가 필터를 통과하지 못했습니다.");
-                    }
-                    elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터에 값이 없거나 검증을 통과하지 못했습니다.");
+                    if(!is_integer($filter)) throw new ExceptionBase($k.'='.$v." : Invalid filter format.");
+                    if($options !== null && !is_integer($options)) throw new ExceptionBase($k.'='.$v." : Filter option format is invalid.");
+                    if (false !== ($clean = filter_var($v, $filter, $options))) $result[$k] = $clean;
                     break;
 
-                // 사용자 정의함수
+                // User Define Function
                 // 사용자 정의 함수는 호출 가능할 때만 실행
                 case self::TYPE_FUNCTION:
-                    $func = $this->schema[$k][self::TYPE_FUNCTION];
-                    if (is_callable($func))
-                    {
-                        if ($clean = $func($v))
-                        {
-                            $result[$k] = $clean;
-                        }
-                        elseif ($strict)
-                        {
-                            throw new ExceptionBase($k.'='.$v." : 데이터가 사용자정의 함수를 통과하지 못했습니다.");
-                        }
-                        elseif ($require=='true') throw new ExceptionBase($k." : 필수입력 데이터에 값이 없거나 검증을 통과하지 못했습니다.");
-                    }
+                    $func = $schema[self::TYPE_FUNCTION];
+                    if (is_callable($func) && ($clean = $func($v))) $result[$k] = $clean;
                     break;
 
-                // rester 정의 함수
+                // rester define function
                 default:
                     $func = 'validate_' . $this->schema[$k]['type'];
-                    if (method_exists($this, $func))
-                    {
-                        $result[$k] = $this->$func($v);
-                    }
-                    else
-                    {
-                        throw new ExceptionBase($k.'='.$v." : 함수가 정의되어 있지 않습니다.");
-                    }
+                    if (method_exists($this, $func)) $result[$k] = $this->$func($v);
+                    else throw new ExceptionBase($k.'='.$v." : There is no Rester definition function.");
+            }
+
+            // Check Require value
+            if(!isset($result[$k]) && $require)
+            {
+                throw new ExceptionBase($k." : The required input data does not have a value or pass validation.");
             }
 
         }
