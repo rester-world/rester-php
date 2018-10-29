@@ -144,7 +144,7 @@ class Database extends PDO
         list($fields, $values, $data) = $this->extract_data($data);
         $fields = implode(',',$fields);
         $values = implode(',',$values);
-        $query =  "INSERT INTO {$this->tbn} ({$fields}) VALUES ({$values})";
+        $query =  "INSERT INTO `{$this->tbn}` ({$fields}) VALUES ({$values})";
 
         try
         {

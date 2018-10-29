@@ -1,6 +1,8 @@
 FROM kevinpark/nginx-php-redis
 MAINTAINER Kevin Park<kevinpark@webace.co.kr>
 
+RUN apt-get -y install openssl
+
 RUN mkdir /var/www/cfg
 
 ADD cfg /var/www/cfg
