@@ -276,34 +276,6 @@ function is_assoc($arr)
 }
 
 /**
- * @param $key
- * @param $function
- *
- * @throws \Rester\Exception\ExceptionBase
- */
-function verify_header($key, $function)
-{
-    if(!is_callable($function)) throw new \Rester\Exception\ExceptionBase("2번째 파라미터는 호출 가능한 함수여야 합니다.");
-
-    $data = $function(cfg::Get('request-headers',$key));
-    if($data) rester::set_request_header($key, $data);
-}
-
-/**
- * @param $key
- * @param $function
- *
- * @throws \Rester\Exception\ExceptionBase
- */
-function verify_param($key, $function)
-{
-    if(!is_callable($function)) throw new \Rester\Exception\ExceptionBase("2번째 파라미터는 호출 가능한 함수여야 합니다.");
-
-    $data = $function(cfg::Get('request-body',$key));
-    if($data) rester::set_request_param($key, $data);
-}
-
-/**
  * @param $url string
  * @param $saveto string
  */

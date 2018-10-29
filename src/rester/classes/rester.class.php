@@ -1,4 +1,7 @@
 <?php
+
+use Rester\Data\Schema;
+
 /**
  * Class rester
  * kevinpark@webace.co.kr
@@ -25,6 +28,9 @@ class rester
     protected static $err_msg = array();
 
     protected static $current_module;
+
+    protected static $check_auth = false;
+    protected static $use_cache = false;
 
     /**
      * @param $module string
@@ -75,10 +81,16 @@ class rester
     {
         self::$current_module = cfg::Get('module');
 
+        // include verify function
+        if($path_verify_func = self::path_verify_func())
+        {
+            include $path_verify_func;
+        }
+
         // check request parameter
         if($path_verify = self::path_verify())
         {
-            $schema = new \Rester\Data\Schema($path_verify);
+            $schema = new Schema($path_verify);
 
             // check header
             try
@@ -89,7 +101,7 @@ class rester
             }
             catch (Exception $e)
             {
-                self::error('request-headers : '.$e->__toString());
+                self::error('request-headers : '.$e->getMessage());
             }
 
             // check body | query string
@@ -101,34 +113,16 @@ class rester
             }
             catch (Exception $e)
             {
-                self::error('request-body | query: '.$e->__toString());
+                self::error('request-body | query: '.$e->getMessage());
             }
 
         }
 
-        // check request param with func
-        if($path_verify_func = self::path_verify_func())
-        {
-            include $path_verify_func;
-        }
+        // check auth,cache
+        $path_proc = self::path_proc();
 
-        // 검증파일이 있으면 필수입력 검사
-        if($path_verify = self::path_verify())
-        {
-            $schema = new \Rester\Data\Schema($path_verify);
-            try
-            {
-                $schema->check_require(self::all_params());
-            }
-            catch (Exception $e)
-            {
-                self::error($e->__toString());
-            }
-        }
-
-
-        // check request auth
-        if($path_auth = self::path_auth())
+        // check auth
+        if(self::$check_auth && $path_auth = self::path_auth())
         {
             include $path_auth;
         }
@@ -144,16 +138,48 @@ class rester
         else
         {
             // 해당 프로시저 파일검사
-            if(false === ($path_proc = self::path_proc()))
+            if(false === $path_proc)
             {
                 self::$response_code = 404;
                 self::error("해당 파일을 찾을 수 없습니다.");
             }
 
-            ob_start();
-            include $path_proc;
-            $body = ob_get_contents();
-            ob_end_clean();
+            // cache
+            $body = null;
+            if(self::$use_cache)
+            {
+                $proc = cfg::Get('proc');
+                $method = strtolower(cfg::Get('method'));
+                $timeout = cfg('cache-timeout',$proc)[$method];
+                $redis_cfg = cfg::Get('cache');
+                if(!$timeout) $timeout = $redis_cfg['timeout'];
+
+                if($redis_cfg && $redis_cfg['host'] && $redis_cfg['port'])
+                {
+                    $key = implode('_', array_merge(array(self::$current_module,$proc,$method),self::param()));
+                    $redis = new Redis();
+                    $redis->connect($redis_cfg['host'], $redis_cfg['port']);
+                    if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
+                    $body = $redis->get($key);
+                    if(!$body)
+                    {
+                        ob_start();
+                        include $path_proc;
+                        $body = ob_get_contents();
+                        ob_end_clean();
+                        $redis->set($key,$body,$timeout);
+                    }
+
+                    $redis->close();
+                }
+            }
+            else
+            {
+                ob_start();
+                include $path_proc;
+                $body = ob_get_contents();
+                ob_end_clean();
+            }
         }
 
         // 응답 결과 코드 설정
@@ -186,15 +212,39 @@ class rester
         if(null === $module_name) $module_name = self::$current_module;
         if(null === $proc_name) $proc_name = cfg::Get('proc');
 
-        $path = implode('/',array(
+        $method = strtolower(cfg::Get('method'));
+        $path_array = array(
             self::path_module(),
             $module_name,
-            $proc_name,
-            strtolower(cfg::Get('method')).'.php'
-        ));
+            $proc_name
+        );
 
-        if(is_file($path)) return $path;
-        return false;
+        $path = false;
+
+        if(is_file($_path = implode('/',array_merge($path_array,array($method.'.php')))))
+        {
+            $path = $_path;
+        }
+        else if(is_file($_path = implode('/',array_merge($path_array,array($method.'.auth.php')))))
+        {
+            self::$check_auth = true;
+            $path = $_path;
+        }
+        else if(is_file($_path = implode('/',array_merge($path_array,array($method.'.cache.php')))))
+        {
+            self::$use_cache = true;
+            $path = $_path;
+        }
+        else if(
+            is_file($_path = implode('/',array_merge($path_array,array($method.'.auth.cache.php'))))
+            || is_file($_path = implode('/',array_merge($path_array,array($method.'.cache.auth.php'))))
+        )
+        {
+            self::$check_auth = true;
+            self::$use_cache = true;
+            $path = $_path;
+        }
+        return $path;
     }
 
     /**
@@ -351,15 +401,39 @@ class rester
         if(null === $module_name) $module_name = self::$current_module;
         if(null === $proc_name) $proc_name = cfg::Get('proc');
 
-        $path = implode('/',array(
+        $path = false;
+
+        // auth procedure
+        $_path = implode('/',array(
             self::path_module(),
             $module_name,
             $proc_name,
-            strtolower(cfg::Get('method')).'.'.self::file_auth
+            self::file_auth
         ));
+        if(is_file($_path)) $path = $_path;
 
-        if(is_file($path)) return $path;
-        return false;
+        // auth module
+        if(false === $path)
+        {
+            $_path = implode('/',array(
+                self::path_module(),
+                $module_name,
+                self::file_auth
+            ));
+            if(is_file($_path)) $path = $_path;
+        }
+
+        // auth system
+        if(false === $path)
+        {
+            $_path = implode('/',array(
+                self::path_module(),
+                self::file_auth
+            ));
+            if(is_file($_path)) $path = $_path;
+        }
+
+        return $path;
     }
 
     /**

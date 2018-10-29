@@ -1,5 +1,9 @@
 <?php if(!defined("__RESTER__")) exit;
 
+///
+/// 전체 시스템의 권한 검사
+///
+
 // Call sequence
 // 1. post.verify.ini __OK
 // 2. post.auth.php __OK

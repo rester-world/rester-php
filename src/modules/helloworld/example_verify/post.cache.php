@@ -3,9 +3,9 @@
 $body = cfg::Get('response_body_skel');
 
 $body['success'] = true;
-$body['msg'] = 'Hello world!! (verify example)';
+$body['msg'] = 'Hello Rester! (verify example)';
 $body['data'] = array(
-    '파라미터 검증 예제',
+    '파라미터 검증 예제 ('.date("Y-m-d H:i:s").')',
     '------------------------------------------------------------',
     '== header ==',
     '------------------------------------------------------------',

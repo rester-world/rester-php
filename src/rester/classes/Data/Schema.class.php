@@ -182,7 +182,7 @@ class Schema
                 // User Define Function
                 // 사용자 정의 함수는 호출 가능할 때만 실행
                 case self::TYPE_FUNCTION:
-                    $func = $schema[self::TYPE_FUNCTION];
+                    $func = $k;
                     if (is_callable($func) && ($clean = $func($v))) $result[$k] = $clean;
                     break;
 
@@ -202,30 +202,6 @@ class Schema
         }
         return $result;
     }
-
-    /**
-     * 필수입력 데이터 검사
-     * 하나라도 누락되면 Exception을 반환한다.
-     *
-     * @param array $data
-     *
-     * @throws ExceptionBase
-     */
-    public function check_require($data)
-    {
-        foreach($this->schema as $k=>$v)
-        {
-            if($v['require']=='true')
-            {
-                // null 또는 공백일경우
-                if($data[$k]!==0 && !$data[$k])
-                {
-                    throw new ExceptionBase($k." : 필수입력 데이터가 누락되었습니다.");
-                }
-            }
-        }
-    }
-
 
     /**
      * Schema constructor.
