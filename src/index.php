@@ -1,10 +1,24 @@
 <?php
-include_once('./rester/common.php');
+$response_body = array(
+    'success'=>false,
+    'msg'=>'',
+    'data'=>''
+);
+
 try
 {
-    rester::run();
+    include_once('./rester/common.php');
+    $response_body['data'] = rester::run();
+    $response_body['msg'] = implode(',', rester::msg());
+    if(rester::isSuccess()) $response_body['success'] = true;
 }
 catch (Exception $e)
 {
-    var_dump($e->getTrace());
+    $response_body['msg'] = $e->getMessage();
 }
+
+// print response code & response header
+rester::run_headers();
+
+echo json_encode($response_body);
+

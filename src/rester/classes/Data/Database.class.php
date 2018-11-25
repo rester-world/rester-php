@@ -33,6 +33,9 @@ class Database extends PDO
         {
             $this->schema = null;
             $this->tbn = null;
+            var_dump($dsn);
+            var_dump($user_name);
+            var_dump($password);
             parent::__construct($dsn, $user_name, $password);
 
             $timezone = cfg::Get('default','timezone');
