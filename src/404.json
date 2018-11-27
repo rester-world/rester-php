@@ -1,0 +1,9 @@
+{
+    "success": "false",
+    "msg": "URL rule error",
+    "data": {
+        "rule": "http://your-domain/v{version}/{module}/{function}",
+        "online-document": "http://doc.daium.kr",
+        "copyright": "rester.kr"
+    }
+}

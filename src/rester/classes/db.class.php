@@ -1,10 +1,7 @@
 <?php
-use \Rester\Data\Database;
-
 /**
  * Class db
  * @author kevinpark@webace.co.kr
- * @author
  */
 class db
 {
@@ -13,76 +10,69 @@ class db
      */
     private static $inst = array();
 
-    const config_file = "dbconfig.php"; // config 파일명
-
     /**
      * @param string $config_name
      *
-     * @return \Rester\Data\Database
-     * @throws Exception
+     * @return bool|PDO
      */
     public static function get($config_name='default')
     {
-        if(!is_string($config_name)) throw new Exception("1번째 파라미터는 dbconfig.php 파일 설정 키 값 이어야 합니다.");
-
-        // 처음 호출이면 아래 내용 실행
-        if (self::$inst[$config_name] == null)
+        try
         {
-            $cfg = include dirname(__FILE__).'/../../../cfg/'.self::config_file;
+            if(!is_string($config_name)) throw new Exception("The parameter must be a string.");
 
-            if(!isset($cfg[$config_name])) throw new Exception("키 값에 맞는 설정이 없습니다.");
-
-            $cfg = $cfg[$config_name];
-            if (
-                !isset($cfg['type'])
-                || !isset($cfg['host'])
-                || !isset($cfg['user'])
-                || !isset($cfg['password'])
-                || !isset($cfg['database'])
-            )
+            // 처음 호출이면 아래 내용 실행
+            if (self::$inst[$config_name] == null)
             {
-                throw new Exception('dbconfig.php 설정 형식이 잘못되었습니다.');
-            }
+                $cfg = cfg::Get('database',$config_name);
 
-            try
-            {
+                if(!$cfg) throw new Exception("There is no {$config_name} database setting.");
+                if(!$cfg['type']) throw new Exception("There is no {$config_name}['type'] database setting.");
+                if(!$cfg['host']) throw new Exception("There is no {$config_name}['host'] database setting.");
+                if(!$cfg['user']) throw new Exception("There is no {$config_name}['user'] database setting.");
+                if(!$cfg['password']) throw new Exception("There is no {$config_name}['password'] database setting.");
+                if(!$cfg['database']) throw new Exception("There is no {$config_name}['database'] database setting.");
+
                 $dsn = self::create_dsn($cfg);
-                self::$inst[$config_name] = new Database($dsn, $cfg['user'], $cfg['password']);
+                self::$inst[$config_name] = new PDO($dsn, $cfg['user'], $cfg['password']);
             }
-            catch (Exception $e)
-            {
-                echo $e;
-                exit;
-            }
+            return self::$inst[$config_name];
         }
-
-        return self::$inst[$config_name];
+        catch (Exception $e)
+        {
+            rester::failure();
+            rester::msg($e->getMessage());
+            return false;
+        }
     }
 
     /**
-     * @param array $arg
+     * @param array $db
      *
      * @return string
      * @throws Exception
      */
-    private static function create_dsn($arg)
+    private static function create_dsn($db)
     {
-        $db_type = strtolower($arg['type']);
-
-        if (!is_string($db_type)) throw new Exception('커넥션 정보가 명확하지 않습니다.');
+        $db_type = strtolower($db['type']);
 
         if ($db_type == "oracle" || $db_type == "orcl" || $db_type == "oci")
         {
-            $dns = "oci:dbname=//" . $arg['host'] . ':' . $arg['port'] . '/' . $arg['database'];
+            $dns = "oci:dbname=//" . $db['host'] . ':' . $db['port'] . '/' . $db['database'];
         }
         elseif ($db_type == "mssql" || $db_type == "dblib")
         {
-            $dns = "dblib:host=" . $arg['host'] . ':' . $arg['port'] . ';dbname=' . $arg['database'];
+            $dns = "dblib:host=" . $db['host'] . ':' . $db['port'] . ';dbname=' . $db['database'];
+        }
+        elseif($db_type == 'mysql')
+        {
+            $dns = $db_type . ":host=" . $db['host'] . ";port=" . $db['port'] . ";dbname=" . $db['database'];
         }
         else
         {
-            $dns = $db_type . ":host=" . $arg['host'] . ";port=" . $arg['port'] . ";dbname=" . $arg['database'];
+            throw new Exception("Database type({$db_type}) not supported.");
         }
         return $dns;
     }
 }
+

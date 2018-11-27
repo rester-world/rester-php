@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Class rester
  * kevinpark@webace.co.kr
@@ -8,206 +9,277 @@
 class rester
 {
     const path_module = 'modules';
-    const file_auth = 'auth.php';
     const file_verify_func = 'verify.php';
     const file_verify = 'verify.ini';
     const file_config = 'config.ini';
-    const file_schema = 'table.ini';
 
-    protected static $request_headers = array();
     protected static $request_param = array();
-
-    protected static $response_headers = array();
     protected static $response_body = null;
     protected static $response_code = 200;
 
-    protected static $err = false;
-    protected static $err_msg = array();
+    protected static $success = true;
+    protected static $msg = array();
 
-    protected static $current_module;
-
-    /**
-     * @param $module string
-     *
-     * @return string
-     */
-    public static function change_module($module)
-    {
-        $old_module = self::$current_module;
-        self::$current_module = $module;
-        return $old_module;
-    }
+    protected static $cfg;
+    protected static $check_auth = false;
+    protected static $use_cache = false;
+    protected static $use_cache_header = false;
+    protected static $cache_timeout;
+    protected static $header;
 
     /**
-     * Add error message & set failure
-     *
-     * @param string $msg error message
-     */
-    public static function error($msg)
-    {
-        self::$err = true;
-        self::$err_msg[] = $msg;
-    }
-
-    /**
+     * response code
      * execute header();
      */
-    protected static function run_headers()
+    public static function run_headers()
     {
-        foreach (self::$response_headers as $k=>$v)
+        http_response_code(self::$response_code);
+        if(self::$header) header("Content-type: ".self::$header);
+        else header("Content-type: application/json; charset=UTF-8");
+    }
+
+    /**
+     * @param string $v
+     */
+    public static function set_mime($v) { self::$header = $v; }
+
+    /**
+     * @param $v
+     */
+    public static function set_header($v) { self::$header = $v; }
+
+    /**
+     * @param string $module
+     * @param string $proc
+     * @param array  $param
+     *
+     * @return bool|array
+     */
+    public static function sql($module, $proc, $param=[])
+    {
+
+        try
         {
-            header(trim($k).': '.$v);
+            $cfg = cfg::Get('sql');
+            if(!$cfg['host'] || !$cfg['port']) throw new Exception("There is no config.(sql)");
+
+            $url = implode('/',array(
+                $cfg['host'].':'.$cfg['port'],
+                'v1',
+                $module,
+                $proc
+            ));
+
+            $ch = curl_init();
+            curl_setopt_array($ch, array(
+                CURLOPT_URL => $url,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_ENCODING => "",
+                CURLOPT_MAXREDIRS => 10,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+                CURLOPT_CUSTOMREQUEST => 'POST',
+                CURLOPT_POSTFIELDS => json_encode($param),
+            ));
+
+            $response_body = curl_exec($ch);
+            curl_close($ch);
+            $res = json_decode($response_body,true);
+            if($res['success']) return $res['data'];
+            throw new Exception($res['msg']);
+        }
+        catch (Exception $e)
+        {
+            rester::failure();
+            rester::msg($e->getMessage());
+            return false;
         }
     }
 
     /**
      * run rester
      *
-     * 1. verify parameter
-     * 3. check error
-     * 4. include procedure
-     * 5. echo response code
-     * 6. echo header
-     * 7. echo body(json)
      * @throws Exception
      */
     public static function run()
     {
-        self::$current_module = cfg::Get('module');
+        $module = cfg::module();
+        $proc = cfg::proc();
+        $method = cfg::request_method();
 
-        // check request parameter
-        if($path_verify = self::path_verify())
-        {
-            $schema = new \Rester\Data\Schema($path_verify);
-
-            // check header
-            try
-            {
-                if($data = $schema->validate(cfg::Get('request-headers')))
-                    foreach($data as $k => $v)
-                        rester::set_request_header($k, $v);
-            }
-            catch (Exception $e)
-            {
-                self::error('request-headers : '.$e->__toString());
-            }
-
-            // check body | query string
-            try
-            {
-                if($data = $schema->validate(cfg::Get('request-body')))
-                    foreach($data as $k => $v)
-                        rester::set_request_param($k, $v);
-            }
-            catch (Exception $e)
-            {
-                self::error('request-body | query: '.$e->__toString());
-            }
-
-        }
-
-        // check request param with func
+        ///=====================================================================
+        /// include verify function
+        ///=====================================================================
         if($path_verify_func = self::path_verify_func())
         {
             include $path_verify_func;
         }
 
-        // 검증파일이 있으면 필수입력 검사
+        ///=====================================================================
+        /// check request parameter
+        /// check body | query string
+        ///=====================================================================
         if($path_verify = self::path_verify())
         {
-            $schema = new \Rester\Data\Schema($path_verify);
+            $schema = new Schema($path_verify);
             try
             {
-                $schema->check_require(self::all_params());
+                if($data = $schema->validate(cfg::parameter()))
+                    foreach($data as $k => $v) rester::set_request_param($k, $v);
             }
             catch (Exception $e)
             {
-                self::error($e->__toString());
+                throw new Exception("request-body | query: ".$e->getMessage());
             }
         }
 
-
-        // check request auth
-        if($path_auth = self::path_auth())
+        ///=====================================================================
+        /// check file
+        ///=====================================================================
+        $path_proc = self::path_proc();
+        if(false === $path_proc)
         {
-            include $path_auth;
+            throw new Exception("Not found procedure. Module: {$module}, Procedure: {$proc} ");
         }
 
-        // 오류사항이 있을 때
-        if(self::$err)
+        ///=====================================================================
+        /// check auth
+        ///=====================================================================
+        if(self::$check_auth) { session::get(cfg::token()); }
+
+        ///=====================================================================
+        /// check cache
+        ///=====================================================================
+        $redis_cfg = cfg::cache();
+        if(self::$use_cache && !($redis_cfg['host'] && $redis_cfg['port'])) throw new Exception("Require cache config to use cache.");
+
+        $response_data = null;
+        $redis = new Redis();
+        $cache_key = implode('_', array_merge(array($module,$proc,$method),self::param()));
+        if(self::$use_cache)
         {
-            $body = json_encode(array(
-                'success' => false,
-                'msg' => self::$err_msg
-            ));
-        }
-        else
-        {
-            // 해당 프로시저 파일검사
-            if(false === ($path_proc = self::path_proc()))
+            $redis->connect($redis_cfg['host'], $redis_cfg['port']);
+            if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
+            // get cached data
+            $response_data = json_decode($redis->get($cache_key),true);
+            if(self::$use_cache_header)
             {
-                self::$response_code = 404;
-                self::error("해당 파일을 찾을 수 없습니다.");
+                self::$header = json_decode($redis->get('header_'.$cache_key),true);
             }
-
-            ob_start();
-            include $path_proc;
-            $body = ob_get_contents();
-            ob_end_clean();
         }
 
-        // 응답 결과 코드 설정
-        http_response_code(self::$response_code);
-        // 응답헤더 출력
-        self::run_headers();
-        // 저장된 $body 출력
-        echo $body;
+        ///=====================================================================
+        /// include config.ini
+        ///=====================================================================
+        $cfg = array();
+        if($path = self::path_cfg())
+        {
+            $cfg = parse_ini_file($path,true, INI_SCANNER_TYPED);
+        }
+        self::$cfg = $cfg;
+
+        ///=====================================================================
+        /// include procedure
+        ///=====================================================================
+        if(!$response_data) { $response_data = include $path_proc; }
+
+        // cached header
+        if(self::$use_cache_header && !$redis->get('header_'.$cache_key))
+        { $redis->set('header_'.$cache_key,self::$header,self::$cache_timeout); }
+
+        // cached body
+        if(self::$use_cache && !$redis->get($cache_key))
+        { $redis->set($cache_key,json_encode($response_data),self::$cache_timeout); }
+
+        // close redis
+        if(self::$use_cache) { $redis->close(); }
+
+        ///=====================================================================
+        /// print image or file
+        ///=====================================================================
+        if(self::$header)
+        {
+            echo $response_data;
+            exit;
+        }
+
+        ///=====================================================================
+        /// return json body
+        ///=====================================================================
+        return $response_data;
     }
 
     /**
-     * Path to module
+     * Path module
      *
      * @return string
      */
-    protected static function path_module()
-    {
-        return dirname(__FILE__).'/../../'.self::path_module;
-    }
+    protected static function path_module() { return dirname(__FILE__).'/../../'.self::path_module; }
 
     /**
      * Path to procedure file
      *
-     * @param null|string $module_name 모듈 이름
-     * @param null|string $proc_name   프로시저 이름
-     * @return bool|string      실패 | 경로
+     * @param null|string $module_name
+     * @param null|string $proc_name
+     *
+     * @return bool|string
+     * @throws Exception
      */
     protected static function path_proc($module_name = null, $proc_name = null)
     {
-        if(null === $module_name) $module_name = self::$current_module;
-        if(null === $proc_name) $proc_name = cfg::Get('proc');
+        if($timeout = intval(cfg::Get('cache','timeout'))) self::$cache_timeout = $timeout;
+        if(null === $module_name) $module_name = cfg::module();
+        if(null === $proc_name) $proc_name = cfg::proc();
 
-        $path = implode('/',array(
+        $method = strtolower(cfg::Get('method'));
+        $path_array = array(
             self::path_module(),
             $module_name,
-            $proc_name,
-            strtolower(cfg::Get('method')).'.php'
-        ));
+            $proc_name
+        );
 
-        if(is_file($path)) return $path;
-        return false;
+        $path = false;
+        foreach (glob(implode('/',$path_array).'/'.$method.'*.php') as $filename)
+        {
+            $path = $filename;
+            $filename_arr = explode('.',$filename);
+            if(in_array('auth',$filename_arr)) { self::$check_auth = true; }
+            array_walk($filename_arr, function($item){
+                if(strpos($item,'cache')!==false)
+                {
+                    self::$use_cache = true;
+                    $cache_arr = explode('_',$item);
+                    if(
+                        in_array('img', $cache_arr) ||
+                        in_array('image', $cache_arr) ||
+                        in_array('file', $cache_arr))
+                        self::$use_cache_header = true;
+                    foreach($cache_arr as $arg)
+                    {
+                        if($timeout = intval($arg))
+                        {
+                            self::$cache_timeout = $timeout;
+                            break;
+                        }
+                    }
+                }
+            });
+            break;
+        }
+        return $path;
     }
 
     /**
      * Path to fn file
      *
-     * @param string     $name
-     * @param null|string $module_name
+     * @param string      $name
      *
      * @return bool|string
+     * @throws Exception
      */
-    public static function path_fn($name, $module_name = null)
+    public static function path_fn($name)
     {
-        if(null === $module_name) $module_name = self::$current_module;
+        $module_name = cfg::module();
 
         $path = implode('/',array(
             self::path_module(),
@@ -220,41 +292,16 @@ class rester
     }
 
     /**
-     * Path to sql file
-     *
-     * @param      $name
-     * @param null $module_name
-     *
-     * @return bool|string
-     */
-    public static function path_sql($name, $module_name = null)
-    {
-        if(null === $module_name) $module_name = self::$current_module;
-
-        $path = implode('/',array(
-            self::path_module(),
-            $module_name,
-            'sql.'.$name.'.php'
-        ));
-
-        if(is_file($path)) return $path;
-        return false;
-    }
-
-    /**
      * Path to config file
      *
-     * @param null|string $module_name
-     *
      * @return bool|string
+     * @throws Exception
      */
-    public static function path_cfg($module_name = null)
+    public static function path_cfg()
     {
-        if(null === $module_name) $module_name = self::$current_module;
-
         $path = implode('/',array(
             self::path_module(),
-            $module_name,
+            cfg::module(),
             self::file_config
         ));
 
@@ -263,27 +310,22 @@ class rester
     }
 
     /**
-     * Path to schema file
-     *
-     * @param null|string $name
+     * Path to verify file
      *
      * @return bool|string
+     * @throws Exception
      */
-    public static function path_schema($name=null)
+    protected static function path_verify()
     {
-        $schema = self::file_schema;
-        if(!($name===null))
-        {
-            $_schema = explode('.',$schema);
-            $schema = implode('.',array(
-                $_schema[0],$name,$_schema[1]
-            ));
-        }
+        $module_name = cfg::module();
+        $proc_name = cfg::proc();
+        $method = cfg::request_method();
 
         $path = implode('/',array(
             self::path_module(),
-            self::$current_module,
-            $schema
+            $module_name,
+            $proc_name,
+            $method.'.'.self::file_verify
         ));
 
         if(is_file($path)) return $path;
@@ -293,86 +335,25 @@ class rester
     /**
      * Path to verify file
      *
-     * @param null $module_name
-     * @param null $proc_name
-     *
      * @return bool|string
+     * @throws Exception
      */
-    protected static function path_verify($module_name = null, $proc_name = null)
+    protected static function path_verify_func()
     {
-        if(null === $module_name) $module_name = self::$current_module;
-        if(null === $proc_name) $proc_name = cfg::Get('proc');
+        $module_name = cfg::module();
+        $proc_name = cfg::proc();
+        $method = cfg::request_method();
 
         $path = implode('/',array(
             self::path_module(),
             $module_name,
             $proc_name,
-            strtolower(cfg::Get('method')).'.'.self::file_verify
+            $method.'.'.self::file_verify_func
         ));
 
         if(is_file($path)) return $path;
         return false;
     }
-
-    /**
-     * Path to verify file
-     *
-     * @param null $module_name
-     * @param null $proc_name
-     *
-     * @return bool|string
-     */
-    protected static function path_verify_func($module_name = null, $proc_name = null)
-    {
-        if(null === $module_name) $module_name = self::$current_module;
-        if(null === $proc_name) $proc_name = cfg::Get('proc');
-
-        $path = implode('/',array(
-            self::path_module(),
-            $module_name,
-            $proc_name,
-            strtolower(cfg::Get('method')).'.'.self::file_verify_func
-        ));
-
-        if(is_file($path)) return $path;
-        return false;
-    }
-
-    /**
-     * Path to auth file
-     *
-     * @param null|string $module_name
-     * @param null|string $proc_name
-     *
-     * @return bool|string
-     */
-    protected static function path_auth($module_name = null, $proc_name = null)
-    {
-        if(null === $module_name) $module_name = self::$current_module;
-        if(null === $proc_name) $proc_name = cfg::Get('proc');
-
-        $path = implode('/',array(
-            self::path_module(),
-            $module_name,
-            $proc_name,
-            strtolower(cfg::Get('method')).'.'.self::file_auth
-        ));
-
-        if(is_file($path)) return $path;
-        return false;
-    }
-
-    /**
-     * 요청헤더 설정
-     *
-     * @param string $key
-     * @param string $value
-     */
-    public static function set_request_header($key, $value)
-    {
-        if($key && ($value || $value===0)) self::$request_headers[$key] = $value;
-    }
-
 
     /**
      * 요청바디 설정
@@ -380,21 +361,7 @@ class rester
      * @param string $key
      * @param string $value
      */
-    public static function set_request_param($key, $value)
-    {
-        if($key && ($value || $value===0)) self::$request_param[$key] = $value;
-    }
-
-    /**
-     * @param null|string $key
-     * @return mixed
-     */
-    public static function param_header($key=null)
-    {
-        if(isset(self::$request_headers[$key])) return self::$request_headers[$key];
-        if($key == null) return self::$request_headers;
-        return false;
-    }
+    public static function set_request_param($key, $value) { if($key && ($value || $value===0)) self::$request_param[$key] = $value; }
 
     /**
      * 요청값 반환
@@ -409,27 +376,44 @@ class rester
     }
 
     /**
-     * @return array
-     */
-    public static function all_params()
-    {
-        return array_merge(self::$request_param,self::$request_headers);
-    }
-
-    /**
+     * @param string $section
      * @param string $key
-     * @param string $value
+     *
+     * @return string|array
      */
-    public static function set_response_header($key, $value)
+    public static function cfg($section='', $key='')
     {
-        self::$response_headers[trim($key)] = $value;
+        if($section==='') return self::$cfg;
+        if($section && $key) return self::$cfg[$section][$key];
+        return self::$cfg[$section];
     }
 
     /**
      * @param integer $code
      */
-    public static function set_response_code($code)
+    public static function set_response_code($code) { self::$response_code = $code; }
+
+    /**
+     * Add message
+     *
+     * @param null|string $msg
+     *
+     * @return array
+     */
+    public static function msg($msg=null)
     {
-        self::$response_code = $code;
+        if($msg===null) return self::$msg;
+        else self::$msg[] = $msg;
+        return null;
     }
+
+    /**
+     * set failure
+     */
+    public static function failure() { self::$success = false; }
+
+    /**
+     * @return bool
+     */
+    public static function isSuccess() { return self::$success; }
 }
