@@ -34,4 +34,3 @@ function is_assoc($arr)
     $keys = array_keys($arr);
     return array_keys($keys) !== $keys;
 }
-

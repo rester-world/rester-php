@@ -6,7 +6,7 @@
  *	@brief		파일 컨트롤 클래스.
  *	@date		2018.05.10 - 생성
  */
-class File
+class file
 {
     /**
      * @var array default values
@@ -87,16 +87,22 @@ class File
      * file constructor.
      *
      * @param null|array|File $data 파일데이터
-     *
-     * @throws Exception
      */
     public function __construct($data=null)
     {
-        $this->module_name = cfg::module();
-        foreach(cfg::Get('file') as $k=>$v)
+        try
         {
-            if($k=='extensions') $v = array_filter(explode(',',$v));
-            if($v) $this->config[$k] = $v;
+            $this->module_name = cfg::module();
+            foreach(cfg::Get('file') as $k=>$v)
+            {
+                if($k=='extensions') $v = array_filter(explode(',',$v));
+                if($v) $this->config[$k] = $v;
+            }
+        }
+        catch (Exception $e)
+        {
+            rester::failure();
+            rester::msg("Config load failure. ".$e->getMessage());
         }
 
         if(is_object($data)) { $this->data = $data->get(); }
@@ -145,7 +151,7 @@ class File
 
         do
         {
-            $gen_file_name = substr(md5(uniqid(time())),0,12).'_'.$file_name;
+            $gen_file_name = substr(md5(uniqid(time())),0,20).'_'.$file_name;
         } while(is_file($this->upload_path.$gen_file_name));
 
         return $gen_file_name;
@@ -191,6 +197,12 @@ class File
                 $files['tmp_name'][0] = $_FILES[$name]['tmp_name'];
                 $files['size'][0] = $_FILES[$name]['size'];
                 $_FILES[$name] = $files;
+            }
+
+            $upload_file_count = sizeof($_FILES[$name]['name']);
+            if($upload_file_count>$this->config['max_count'])
+            {
+                throw new Exception("File upload failed: Max upload file count({$this->config['max_count']}) Upload({$upload_file_count})");
             }
 
             // 파일개수만큼 돌기
@@ -316,5 +328,269 @@ class File
         return $uploaded_file;
     }
 
-    // TODO DELETE, INSERT, INC COUNT, UPDATE_DESC, UPDATE_TMP
+    /**
+     * 이미지 형태의 파일을 읽어들인다.
+     * 파일 형식에 맞게 이미지 리소스를 로드함
+     * 이미지 형식이 아닌 파일은 false를 반환하며 에러코드를 남긴다.
+     * $echo 변수에 따라 바로 출력하거나 리소스를 반환한다.
+     *
+     * @param string $path 이미지 경로
+     *
+     * @return false|resource 이미지 리소스 반환 실패시 false
+     *
+     * @throws Exception
+     */
+    protected function load($path)
+    {
+        if(is_file($path))
+        {
+            $mime_type = mime_content_type($path);
+            switch($mime_type)
+            {
+                case 'image/jpeg':
+                    $resource = imagecreatefromjpeg($path);
+                    break;
+                case 'image/png':
+                    $resource = imagecreatefrompng($path);
+                    $background = imagecolorallocate($resource, 0, 0, 0);
+                    imagecolortransparent($resource, $background);
+                    imagealphablending($resource, false);
+                    imagesavealpha($resource, true);
+                    break;
+                case "image/gif":
+                    $resource = imagecreatefromgif($path);
+                    $background = imagecolorallocate($resource, 0, 0, 0);
+                    imagecolortransparent($resource, $background);
+                    break;
+                case 'image/svg+xml':
+                    $resource = file_get_contents($path);
+                    break;
+                default : throw new Exception("지원되는 이미지 타입이 아닙니다.");
+            }
+        }
+        else
+        {
+            throw new Exception("1번째 파라미터는 읽을수 있는 파일 경로가 필요합니다.");
+        }
+        return $resource;
+    }
+
+    /**
+     * 썸네일 이미지 생성
+     * 썸네일 비율 유지한채 축소 여백에는 가장 많이 쓰인 컬러키 값으로 체움
+     * 이미 생성된 썸네일은 다시 생성하지 않음
+     *
+     * @param string $path_source
+     * @param integer $thumb_width
+     * @param integer $thumb_height
+     *
+     * @return string
+     * @throws Exception
+     */
+    public function create_thumb($path_source, $thumb_width, $thumb_height)
+    {
+        // 타겟 이미지 (썸네일)
+        $thumb_path = sprintf("%s_%s_%s", $path_source, $thumb_width, $thumb_height);
+
+        // 썸네일 이미지 인스턴스
+        $target = null;
+
+        if(!is_file($thumb_path))
+        {
+            // 소스이미지
+            $source = $this->load($path_source);
+            list($ori_width, $ori_height) = getimagesize($path_source);
+
+            // 썸네일 비율 및 사이즈 계산
+            // 찌그러지지 않도록 비율로 줄인다.
+
+            // 1. 원본영상 크기를 긴 사이즈 기준으로 비율축소함
+            // 2. 짧은 사이즈 가 썸네일 크기를 초과하지 않으면 바로 적용
+            $width = $ori_width;
+            $height = $ori_height;
+
+            if($width>$height)
+            {
+                $ratio = $thumb_width/$width;
+                $height = $height*$ratio;
+                $width = $thumb_width;
+
+                // 썸네일 크기 보다 초과될 경우 다시 줄인다.
+                if($height>$thumb_height)
+                {
+                    $ratio = $thumb_height/$height;
+                    $width = $width*$ratio;
+                    $height = $thumb_height;
+                }
+            }
+            else
+            {
+                $ratio = $thumb_height/$height;
+                $width = $width*$ratio;
+                $height = $thumb_height;
+
+                // 썸네일 크기 보다 초과될 경우 다시 줄인다.
+                if($width>$thumb_width)
+                {
+                    $ratio = $thumb_width/$width;
+                    $height = $height*$ratio;
+                    $width = $thumb_width;
+                }
+            }
+
+            // 칠하기 포지션 계산
+            $diff_width = abs($thumb_width - $width);
+            $diff_height = abs($thumb_height - $height);
+
+            $dest_x = 0;
+            $dest_y = 0;
+            $dest_width = $width;
+            $dest_height = $height;
+
+            // 가로 너비가 넓을 경우 가로기준 맞추고 상하에 배경색 칠함
+            if($diff_width>$diff_height)
+            {
+                $dest_x = round($diff_width/2);
+            }
+            else
+            {
+                $dest_y = round($diff_height/2);
+            }
+
+            // 배경을 깔기위한 컬러키 값 뽑기
+            // 가장 많이 사용된 컬러 값
+            $colors = array();
+            for($x = 0; $x < $ori_width; $x+=2)
+            {
+                for($y = 0; $y < $ori_height; $y+=2)
+                {
+                    $c = imagecolorat($source, $x, $y);
+                    if(array_key_exists($c, $colors)) $colors[$c]++;
+                    else $colors[$c] = 1;
+                }
+            }
+
+            // 정렬하여 가장 많이 사용된 컬러키 값을 뽑아옴
+            arsort($colors);
+            $bgColorRGB = imagecolorsforindex($source, array_shift(array_keys($colors)));
+
+            $target = @imagecreatetruecolor($thumb_width, $thumb_height);
+            imagefill($target,0,0,imagecolorallocate($target,$bgColorRGB['red'],$bgColorRGB['green'],$bgColorRGB['blue']));
+
+            @imagecopyresampled(
+                $target,
+                $source,
+                $dest_x,
+                $dest_y,
+                0,
+                0,
+                $dest_width,
+                $dest_height,
+                $ori_width,
+                $ori_height
+            );
+
+            // 파일로 쓰기
+            @imagejpeg($target, $thumb_path, 100);
+            umask(0);
+            @chmod($thumb_path, 0664); // 추후 삭제를 위하여 파일모드 변경
+            imagedestroy($source);
+        }
+
+        return $thumb_path;
+    }
+
+    /**
+     * 원본이미지 출력
+     * @return false|resource
+     */
+    public function image()
+    {
+        $res = file_get_contents($this->get_uploaded_path());
+        if(!$res)
+        {
+            rester::failure();
+            rester::msg("Image load failure. ");
+        }
+        return $res;
+    }
+
+    /**
+     * 썸네일 이미지 출력
+     *
+     * @param integer $thumb_width
+     * @param integer $thumb_height
+     *
+     * @return bool|string
+     */
+    public function thumb($thumb_width, $thumb_height)
+    {
+        $res = false;
+        try
+        {
+            $image_path = $this->get_uploaded_path();
+            $thumb = $this->create_thumb($image_path, $thumb_width, $thumb_height);
+            $res = file_get_contents($thumb);
+            if(!$res)
+            {
+                throw new Exception("Can not load file.");
+            }
+        }
+        catch (Exception $e)
+        {
+            rester::failure();
+            rester::msg("Image load failure. ".$e->getMessage());
+        }
+        return $res;
+    }
+
+    /**
+     * @param resource $res
+     * @param string   $mime_type
+     *
+     * @throws Exception
+     */
+    public function printImage($res, $mime_type)
+    {
+        header('Content-Type: '.$mime_type);
+        switch($mime_type)
+        {
+            case 'image/jpeg':
+                imagejpeg($res);
+                break;
+            case 'image/png':
+                imagepng($res);
+                break;
+            case "image/gif":
+                imagegif($res);
+                break;
+            case 'image/svg+xml':
+                echo $res;
+                break;
+            default : throw new Exception("지원되는 이미지 타입이 아닙니다.");
+        }
+    }
+
+    /**
+     *  파일 출력
+     */
+    public function download()
+    {
+        $filename = $this->data['file_name'];
+        $filesize = $this->data['file_size'];
+        $filepath = $this->get_uploaded_path();
+
+        $headers = [
+            "Pragma: public",
+            "Expires: 0",
+            "Content-Type: application/octet-stream",
+            "Content-Disposition: attachment; filename='$filename'",
+            "Content-Transfer-Encoding: binary",
+            "Content-Length: $filesize"
+        ];
+        rester::set_header($headers);
+
+        return file_get_contents($filepath);
+    }
+
 }
