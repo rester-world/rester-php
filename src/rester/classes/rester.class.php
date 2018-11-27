@@ -27,9 +27,6 @@ class rester
     protected static $cache_timeout;
     protected static $header;
 
-    protected static $check_auth = false;
-    protected static $use_cache = false;
-
     /**
      * response code
      * execute header();
