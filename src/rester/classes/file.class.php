@@ -152,6 +152,15 @@ class File
     }
 
     /**
+     * 업로드 폴더 생성
+     */
+    protected function prepare_upload()
+    {
+        umask(0);
+        mkdir($this->upload_path, 0775, true);
+    }
+
+    /**
      * 파일 업로드
      *
      * 클라이언트에서 전달 받은 파일을 업로드 한다.
@@ -165,12 +174,9 @@ class File
      */
     public function upload($form_name)
     {
+        $this->prepare_upload();
         try
         {
-            // 업로드 폴더 생성
-            umask(0);
-            mkdir($this->upload_path, 0775, true);
-
             // 폼이름
             $name = $form_name;
 
@@ -209,6 +215,7 @@ class File
 
                     if(move_uploaded_file($tmp_name, $dest_file))
                     {
+                        umask(0);
                         chmod($dest_file, 0664);
 
                         $uploaded_files[] = array(
@@ -245,6 +252,68 @@ class File
                 if(is_file($v)) unlink($v);
             }
         }
+    }
+
+    /**
+     * @param string $url
+     * @param string $saveto
+     */
+    public function grab_file($url,$saveto)
+    {
+        $ch = curl_init ($url);
+        curl_setopt($ch, CURLOPT_HEADER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_BINARYTRANSFER,1);
+        $raw=curl_exec($ch);
+        curl_close ($ch);
+        if(file_exists($saveto)){
+            unlink($saveto);
+        }
+        $fp = fopen($saveto,'x');
+        fwrite($fp, $raw);
+        fclose($fp);
+    }
+
+    /**
+     * @param $url string
+     *
+     * @return bool|File 업로드된 파일목록
+     */
+    public function upload_from_url($url)
+    {
+        $this->prepare_upload();
+
+        $path = parse_url($url, PHP_URL_PATH);
+        $file_name = basename($path);
+
+        $real_file_name = $this->gen_filename($file_name);
+        $dest_file = $this->upload_path.$real_file_name;
+
+        // 파일 다운로드
+        $this->grab_file($url,$dest_file);
+
+        $uploaded_file = false;
+        if(file_exists($dest_file))
+        {
+            umask(0);
+            chmod($dest_file, 0664);
+            $type = mime_content_type($dest_file);
+            $size = filesize($dest_file);
+
+            $uploaded_file = array(
+                'file_module'=>$this->module_name,
+                'file_name'=>$file_name,
+                'file_local_name'=>$real_file_name,
+                'file_size'=>$size,
+                'file_type'=>$type
+            );
+        }
+        else
+        {
+            rester::failure();
+            rester::msg("File download failure.");
+        }
+        return $uploaded_file;
     }
 
     // TODO DELETE, INSERT, INC COUNT, UPDATE_DESC, UPDATE_TMP
