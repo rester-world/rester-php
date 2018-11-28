@@ -27,9 +27,6 @@ class rester
     protected static $cache_timeout;
     protected static $header;
 
-    protected static $check_auth = false;
-    protected static $use_cache = false;
-
     /**
      * response code
      * execute header();
@@ -124,7 +121,7 @@ class rester
         ///=====================================================================
         if($path_verify = self::path_verify())
         {
-            $schema = new Schema($path_verify);
+            $schema = new schema($path_verify);
             try
             {
                 if($data = $schema->validate(cfg::parameter()))
@@ -163,11 +160,18 @@ class rester
         {
             $redis->connect($redis_cfg['host'], $redis_cfg['port']);
             if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
+
             // get cached data
-            $response_data = json_decode($redis->get($cache_key),true);
+            $response_data = $redis->get($cache_key);
+            $_d = json_decode($response_data,true);
+            if(is_array($_d)) $response_data = $_d;
+
+            // get cached header
             if(self::$use_cache_header)
             {
-                self::$header = json_decode($redis->get('header_'.$cache_key),true);
+                self::$header = $redis->get('header_'.$cache_key);
+                $_header = json_decode(self::$header,true);
+                if(is_array($_header)) self::$header = $_header;
             }
         }
 
@@ -188,11 +192,19 @@ class rester
 
         // cached header
         if(self::$use_cache_header && !$redis->get('header_'.$cache_key))
-        { $redis->set('header_'.$cache_key,self::$header,self::$cache_timeout); }
+        {
+            $_header = self::$header;
+            if(is_array($_header)) $_header = json_encode($_header);
+            $redis->set('header_'.$cache_key,$_header,self::$cache_timeout);
+        }
 
         // cached body
         if(self::$use_cache && !$redis->get($cache_key))
-        { $redis->set($cache_key,json_encode($response_data),self::$cache_timeout); }
+        {
+            $_d = $response_data;
+            if(is_array($_d)) $_d = json_encode($_d);
+            $redis->set($cache_key,$_d,self::$cache_timeout);
+        }
 
         // close redis
         if(self::$use_cache) { $redis->close(); }
@@ -200,8 +212,16 @@ class rester
         ///=====================================================================
         /// print image or file
         ///=====================================================================
-        if(self::$header)
+        if($mime = self::$header)
         {
+            if(is_array($mime))
+            {
+                foreach($mime as $h) { header($h); }
+            }
+            else
+            {
+                header('Content-Type: '.$mime);
+            }
             echo $response_data;
             exit;
         }
@@ -244,6 +264,8 @@ class rester
         $path = false;
         foreach (glob(implode('/',$path_array).'/'.$method.'*.php') as $filename)
         {
+            if(strpos($filename,self::file_verify_func)!==false) continue;
+
             $path = $filename;
             $filename_arr = explode('.',$filename);
             if(in_array('auth',$filename_arr)) { self::$check_auth = true; }
@@ -364,7 +386,7 @@ class rester
      * @param string $key
      * @param string $value
      */
-    public static function set_request_param($key, $value) { if($key && ($value || $value===0)) self::$request_param[$key] = $value; }
+    public static function set_request_param($key, $value) { self::$request_param[$key] = $value; }
 
     /**
      * 요청값 반환
