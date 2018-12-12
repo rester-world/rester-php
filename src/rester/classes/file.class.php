@@ -148,6 +148,7 @@ class file
         $file_name = preg_replace("/\.(php|phtm|htm|cgi|pl|exe|jsp|asp|inc)/i", "$0-x", $file_name);
         // 공백을 _로 변환
         $file_name = str_replace(" ", "_", $file_name);
+        $file_name = urlencode($file_name);
 
         do
         {
@@ -181,65 +182,128 @@ class file
     public function upload($form_name)
     {
         $this->prepare_upload();
+
+        // 업로드된 파일
+        $uploaded_files = array();
+
         try
         {
             // 폼이름
             $name = $form_name;
 
-            // 업로드된 파일
-            $uploaded_files = array();
-
-            // 단일파일 => 파일 배열
-            if(!is_array($_FILES[$name]['name']) && $_FILES[$name]['name'])
+            // 2차원 배열구조로 파일업로드가 되었는지 검사
+            if(is_assoc($_FILES[$name]['name']))
             {
-                $files['name'][0] = $_FILES[$name]['name'];
-                $files['type'][0] = $_FILES[$name]['type'];
-                $files['tmp_name'][0] = $_FILES[$name]['tmp_name'];
-                $files['size'][0] = $_FILES[$name]['size'];
-                $_FILES[$name] = $files;
-            }
-
-            $upload_file_count = sizeof($_FILES[$name]['name']);
-            if($upload_file_count>$this->config['max_count'])
-            {
-                throw new Exception("File upload failed: Max upload file count({$this->config['max_count']}) Upload({$upload_file_count})");
-            }
-
-            // 파일개수만큼 돌기
-            foreach($_FILES[$name]['name'] as $k=>$v)
-            {
-                $file_name = $_FILES[$name]['name'][$k];
-                $file_ext = array_pop(explode('.',$file_name));
-                $type = $_FILES[$name]['type'][$k];
-                $tmp_name = $_FILES[$name]['tmp_name'][$k];
-                $size = $_FILES[$name]['size'][$k];
-
-                // 확장자 체크
-                if(!in_array($file_ext,$this->config['extensions']))
+                $sub_names = array_keys($_FILES[$name]['name']);
+                foreach($sub_names as $subname)
                 {
-                    throw new Exception("Not allowed file extension. ({$file_ext})");
-                }
-                // 파일 업로드
-                else if(is_uploaded_file($tmp_name))
-                {
-                    $real_file_name = $this->gen_filename($file_name);
-                    $dest_file = $this->upload_path.$real_file_name;
+                    $_file_names = $_FILES[$name]['name'][$subname];
+                    $_file_types = $_FILES[$name]['type'][$subname];
+                    $_file_tmp_name = $_FILES[$name]['tmp_name'][$subname];
+                    $_file_size = $_FILES[$name]['size'][$subname];
+                    $_file_erros = $_FILES[$name]['error'][$subname];
 
-                    if(move_uploaded_file($tmp_name, $dest_file))
+                    $upload_file_count = sizeof($_file_names);
+                    if($upload_file_count>$this->config['max_count'])
                     {
-                        umask(0);
-                        chmod($dest_file, 0664);
+                        throw new Exception("File upload failed: Max upload file count({$this->config['max_count']}) Upload({$upload_file_count})");
+                    }
 
-                        $uploaded_files[] = array(
-                            'file_module'=>$this->module_name,
-                            'file_name'=>$file_name,
-                            'file_local_name'=>$real_file_name,
-                            'file_size'=>$size,
-                            'file_type'=>$type
-                        );
+                    // 파일개수만큼 돌기
+                    foreach($_file_names as $k=>$v)
+                    {
+                        if(!$v) continue;
+                        $file_name = $_file_names[$k];
+                        $file_ext = array_pop(explode('.',$file_name));
+                        $type = $_file_types[$k];
+                        $tmp_name = $_file_tmp_name[$k];
+                        $size = $_file_size[$k];
+
+                        // 확장자 체크
+                        if(!in_array($file_ext,$this->config['extensions']))
+                        {
+                            throw new Exception("Not allowed file extension. ({$file_ext})");
+                        }
+                        // 파일 업로드
+                        else if(is_uploaded_file($tmp_name))
+                        {
+                            $real_file_name = $this->gen_filename($file_name);
+                            $dest_file = $this->upload_path.$real_file_name;
+
+                            if(move_uploaded_file($tmp_name, $dest_file))
+                            {
+                                umask(0);
+                                chmod($dest_file, 0664);
+
+                                $uploaded_files[$subname][$k] = array(
+                                    'file_module'=>$this->module_name,
+                                    'file_name'=>$file_name,
+                                    'file_local_name'=>$real_file_name,
+                                    'file_size'=>$size,
+                                    'file_type'=>$type,
+                                    'file_datetime'=>date("Y-m-d H:i:s")
+                                );
+                            }
+                        }
                     }
                 }
             }
+            else
+            {
+                // 단일파일 => 파일 배열
+                if(!is_array($_FILES[$name]['name']) && $_FILES[$name]['name'])
+                {
+                    $files['name'][0] = $_FILES[$name]['name'];
+                    $files['type'][0] = $_FILES[$name]['type'];
+                    $files['tmp_name'][0] = $_FILES[$name]['tmp_name'];
+                    $files['size'][0] = $_FILES[$name]['size'];
+                    $_FILES[$name] = $files;
+                }
+
+                $upload_file_count = sizeof($_FILES[$name]['name']);
+                if($upload_file_count>$this->config['max_count'])
+                {
+                    throw new Exception("File upload failed: Max upload file count({$this->config['max_count']}) Upload({$upload_file_count})");
+                }
+
+                // 파일개수만큼 돌기
+                foreach($_FILES[$name]['name'] as $k=>$v)
+                {
+                    $file_name = $_FILES[$name]['name'][$k];
+                    $file_ext = array_pop(explode('.',$file_name));
+                    $type = $_FILES[$name]['type'][$k];
+                    $tmp_name = $_FILES[$name]['tmp_name'][$k];
+                    $size = $_FILES[$name]['size'][$k];
+
+                    // 확장자 체크
+                    if(!in_array($file_ext,$this->config['extensions']))
+                    {
+                        throw new Exception("Not allowed file extension. ({$file_ext})");
+                    }
+                    // 파일 업로드
+                    else if(is_uploaded_file($tmp_name))
+                    {
+                        $real_file_name = $this->gen_filename($file_name);
+                        $dest_file = $this->upload_path.$real_file_name;
+
+                        if(move_uploaded_file($tmp_name, $dest_file))
+                        {
+                            umask(0);
+                            chmod($dest_file, 0664);
+
+                            $uploaded_files[] = array(
+                                'file_module'=>$this->module_name,
+                                'file_name'=>$file_name,
+                                'file_local_name'=>$real_file_name,
+                                'file_size'=>$size,
+                                'file_type'=>$type,
+                                'file_datetime'=>date("Y-m-d H:i:s")
+                            );
+                        }
+                    }
+                }
+            }
+
         }
         catch (Exception $e)
         {
@@ -387,7 +451,7 @@ class file
      * @return string
      * @throws Exception
      */
-    public function create_thumb($path_source, $thumb_width, $thumb_height)
+    public function create_thumb($path_source, $thumb_width=0, $thumb_height=0)
     {
         // 타겟 이미지 (썸네일)
         $thumb_path = sprintf("%s_%s_%s", $path_source, $thumb_width, $thumb_height);
@@ -409,33 +473,50 @@ class file
             $width = $ori_width;
             $height = $ori_height;
 
-            if($width>$height)
+            if($thumb_width && $thumb_height)
             {
-                $ratio = $thumb_width/$width;
-                $height = $height*$ratio;
-                $width = $thumb_width;
-
-                // 썸네일 크기 보다 초과될 경우 다시 줄인다.
-                if($height>$thumb_height)
-                {
-                    $ratio = $thumb_height/$height;
-                    $width = $width*$ratio;
-                    $height = $thumb_height;
-                }
-            }
-            else
-            {
-                $ratio = $thumb_height/$height;
-                $width = $width*$ratio;
-                $height = $thumb_height;
-
-                // 썸네일 크기 보다 초과될 경우 다시 줄인다.
-                if($width>$thumb_width)
+                if($width>$height)
                 {
                     $ratio = $thumb_width/$width;
                     $height = $height*$ratio;
                     $width = $thumb_width;
+
+                    // 썸네일 크기 보다 초과될 경우 다시 줄인다.
+                    if($height>$thumb_height)
+                    {
+                        $ratio = $thumb_height/$height;
+                        $width = $width*$ratio;
+                        $height = $thumb_height;
+                    }
                 }
+                else
+                {
+                    $ratio = $thumb_height/$height;
+                    $width = $width*$ratio;
+                    $height = $thumb_height;
+
+                    // 썸네일 크기 보다 초과될 경우 다시 줄인다.
+                    if($width>$thumb_width)
+                    {
+                        $ratio = $thumb_width/$width;
+                        $height = $height*$ratio;
+                        $width = $thumb_width;
+                    }
+                }
+            }
+            elseif($thumb_width)
+            {
+                $ratio = $thumb_width/$width;
+                $height = $height*$ratio;
+                $width = $thumb_width;
+                $thumb_height = $height;
+            }
+            elseif($thumb_height)
+            {
+                $ratio = $thumb_height/$height;
+                $width = $width*$ratio;
+                $height = $thumb_height;
+                $thumb_width = $width;
             }
 
             // 칠하기 포지션 계산

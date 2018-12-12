@@ -357,9 +357,31 @@ class schema
      *
      * @return string
      */
+    protected function validate_json($data)
+    {
+        $ret = false;
+        if(@json_decode($data,true)) $ret = $data;
+        return $ret;
+    }
+
+    /**
+     * @param $data
+     *
+     * @return string
+     */
     protected function validate_url($data)
     {
         return filter_var($data,FILTER_VALIDATE_URL);
+    }
+
+    /**
+     * @param $data
+     *
+     * @return string
+     */
+    protected function validate_html($data)
+    {
+        return $data;
     }
 }
 
