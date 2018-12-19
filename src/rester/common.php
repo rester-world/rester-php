@@ -6,59 +6,48 @@
  */
 define('__RESTER__', TRUE);
 
-///=============================================================================
+//-------------------------------------------------------------------------------
+/// Load basic classes
+//-------------------------------------------------------------------------------
+require_once dirname(__FILE__).'/classes/cfg.class.php';
+require_once dirname(__FILE__).'/classes/db.class.php';
+require_once dirname(__FILE__).'/classes/file.class.php';
+require_once dirname(__FILE__).'/classes/schema.class.php';
+require_once dirname(__FILE__).'/classes/session.class.php';
+require_once dirname(__FILE__).'/classes/rester.class.php';
+
+
+//-------------------------------------------------------------------------------
 /// autoloader
-/// namespace 설정이 추가됨
-///=============================================================================
+/// namespace 는 폴더로 구분
+/// classExt 폴더만 참조함
+//-------------------------------------------------------------------------------
 spl_autoload_register(function($class_name)
 {
     $class_name = implode('/',array_filter(explode('\\',$class_name), function($item) { return ($item!='Rester');}));
-
     $classExt = dirname(__FILE__).'/classExt/'.$class_name.'.class.php';
-    $classPath = dirname(__FILE__).'/classes/'.$class_name.'.class.php';
     if(is_file($classExt)) include_once $classExt;
-    else if(is_file($classPath)) include_once $classPath;
     else {
         echo "No search class file : ".$class_name;
         exit;
     }
 });
 
-///=============================================================================
-/// catch 되지 않은 예외에 대한 처리함수
-///=============================================================================
-set_exception_handler(function($e) {
-    echo $e;
-    exit;
-});
-
-///=============================================================================
+//-------------------------------------------------------------------------------
 /// Include lib files
-///=============================================================================
-// 01. Default library include
+/// 01. Default library include
+/// 02. Library folder include
+//-------------------------------------------------------------------------------
 include_once(dirname(__FILE__) . '/common.lib.php');
 
-// 02. Library folder include
 foreach (glob(dirname(__FILE__) . '/lib/lib.*.php') as $filename)
 {
     include_once $filename;
 }
 
-///=============================================================================
-/// 오류출력설정
-///=============================================================================
-if(cfg::Get('default', 'debug_mode')) error_reporting(E_ALL ^ (E_NOTICE | E_STRICT | E_WARNING | E_DEPRECATED));
-else error_reporting(0);
-
-///=============================================================================
-/// timezone 설정
-/// rester.ini
-///=============================================================================
-date_default_timezone_set(cfg::Get('default','timezone'));
-
-///=============================================================================
+//-------------------------------------------------------------------------------
 /// set php.ini
-///=============================================================================
+//-------------------------------------------------------------------------------
 set_time_limit(0);
 ini_set("session.use_trans_sid", 0); // PHPSESSID 를 자동으로 넘기지 않음
 ini_set("url_rewriter.tags","");     // 링크에 PHPSESSID 가 따라다니는것을 무력화
@@ -68,11 +57,11 @@ ini_set("memory_limit", "1000M");     // 메모리 용량 설정.
 ini_set("post_max_size","1000M");
 ini_set("upload_max_filesize","1000M");
 
-///=============================================================================
+//-------------------------------------------------------------------------------
 /// Set the global variables [_POST / _GET / _COOKIE]
 /// initial a post and a get variables.
 /// if not support short grobal variables, will be avariable.
-///=============================================================================
+//-------------------------------------------------------------------------------
 if (isset($HTTP_POST_VARS) && !isset($_POST))
 {
     $_POST   = &$HTTP_POST_VARS;
@@ -111,9 +100,9 @@ if (get_magic_quotes_gpc())
     $_REQUEST = array_map('stripslashes_deep', $_REQUEST);
 }
 
-///=============================================================================
+//-------------------------------------------------------------------------------
 /// add slashes
-///=============================================================================
+//-------------------------------------------------------------------------------
 if(is_array($_POST)) array_walk_recursive($_POST, function(&$item){ $item = addslashes($item); });
 if(is_array($_GET)) array_walk_recursive($_GET, function(&$item){ $item = addslashes($item); });
 if(is_array($_COOKIE)) array_walk_recursive($_COOKIE, function(&$item){ $item = addslashes($item); });
