@@ -2,12 +2,14 @@
 $response_body = array(
     'success'=>false,
     'msg'=>'',
+    'warning'=>[],
     'data'=>''
 );
 
 try
 {
     include_once('./rester/common.php');
+    cfg::init();
     $response_body['data'] = rester::run();
     $response_body['msg'] = implode(',', rester::msg());
     if(rester::isSuccess()) $response_body['success'] = true;

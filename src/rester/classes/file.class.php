@@ -1,13 +1,14 @@
 <?php
+
 /**
- *	@class		File
- *	@author	    Kevin Park (kevinpark@webace.co.kr)
- *	@version	1.0
- *	@brief		파일 컨트롤 클래스.
- *	@date		2018.05.10 - 생성
+ * Class file
  */
 class file
 {
+    protected $module_name; // 호출 모듈명
+    protected $data;        // 데이터
+    protected $upload_path; // 파일업로드 경로
+
     /**
      * @var array default values
      */
@@ -17,11 +18,10 @@ class file
         'extensions'=>['jpg','png','jpeg','gif','svg','pdf','hwp','doc','docx','xls','xlsx','ppt','pptx','txt'],
         'max_count'=>5,
         'path_group'=>true,
-        'upload_tmp'=>true
+        'upload_tmp'=>true,
+        'expires'=>172800,
+        'cdn'=>'//cdn.rester.kr'
     );
-    protected $module_name; // 호출 모듈명
-    protected $data;        // 데이터
-    protected $upload_path; // 파일업로드 경로
 
     /**
      * @param string $v
@@ -84,6 +84,57 @@ class file
     }
 
     /**
+     * @return string|bool
+     */
+    public function get_cdn_path()
+    {
+        if(
+            $this->config['upload_path_detail']
+            && $this->data
+            && $this->data['file_datetime']
+            && $this->data['file_local_name']
+            && $this->config['cdn']
+        )
+        {
+            $date = date($this->config['upload_path_detail'],strtotime($this->data['file_datetime']));
+            $ext = substr($this->data['file_local_name'],strrpos($this->data['file_local_name'],'.')+1);
+            $filename = substr($this->data['file_local_name'],0,strrpos($this->data['file_local_name'],'.'));
+            return $this->config['cdn'].'/rester/'.$this->data['file_module'].'/'.urlencode(base64_encode($date.'/'.$filename)).'.'.$ext;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    /**
+     * @return string
+     */
+    protected function gen_upload_path()
+    {
+        $path = explode('/',$this->config['upload_path']);
+        if($this->data)
+        {
+            if($this->config['path_group']) $path[] = $this->data['file_module'];
+            $path = array_merge($path,explode('/',date($this->config['upload_path_detail'],strtotime($this->data['file_datetime']))));
+        }
+        else
+        {
+            if($this->config['path_group']) $path[] = $this->module_name;
+            $path = array_merge($path,explode('/',date($this->config['upload_path_detail'])));
+        }
+        // 경로명 설정에 방해가 될 수 있는 / 제거
+        array_walk($path, function(&$item){ $item = str_replace('/','',$item); } );
+        $path = array_filter($path);
+
+        // 최종파일 추가 공백이 들어가면 / 추가됨
+        $path[] = '';
+
+        // 최종 업로드 경로
+        return implode('/',$path);
+    }
+
+    /**
      * file constructor.
      *
      * @param null|array|File $data 파일데이터
@@ -108,29 +159,8 @@ class file
         if(is_object($data)) { $this->data = $data->get(); }
         elseif(null !== $data && is_array($data)) $this->data = $data;
 
-        ///=====================================================================
-        // Gen upload path
-        ///=====================================================================
-        $path = explode('/',$this->config['upload_path']);
-        if($this->data)
-        {
-            if($this->config['path_group']) $path[] = $this->data['file_module'];
-            $path = array_merge($path,explode('/',date($this->config['upload_path_detail'],strtotime($this->data['file_datetime']))));
-        }
-        else
-        {
-            if($this->config['path_group']) $path[] = $this->module_name;
-            $path = array_merge($path,explode('/',date($this->config['upload_path_detail'])));
-        }
-        // 경로명 설정에 방해가 될 수 있는 / 제거
-        array_walk($path, function(&$item){ $item = str_replace('/','',$item); } );
-        $path = array_filter($path);
-
-        // 최종파일 추가 공백이 들어가면 / 추가됨
-        $path[] = '';
-
         // 최종 업로드 경로
-        $this->upload_path = implode('/',$path);
+        $this->upload_path = $this->gen_upload_path();
     }
 
     /**
@@ -201,7 +231,7 @@ class file
                     $_file_types = $_FILES[$name]['type'][$subname];
                     $_file_tmp_name = $_FILES[$name]['tmp_name'][$subname];
                     $_file_size = $_FILES[$name]['size'][$subname];
-                    $_file_erros = $_FILES[$name]['error'][$subname];
+                    //$_file_erros = $_FILES[$name]['error'][$subname];
 
                     $upload_file_count = sizeof($_file_names);
                     if($upload_file_count>$this->config['max_count'])
@@ -634,6 +664,7 @@ class file
     public function printImage($res, $mime_type)
     {
         header('Content-Type: '.$mime_type);
+        header('Expires: '.gmdate('D, d M Y H:i:s \G\M\T', time() + ($this->config['expires'])));
         switch($mime_type)
         {
             case 'image/jpeg':
