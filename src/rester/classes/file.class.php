@@ -99,7 +99,7 @@ class file
             $date = date($this->config['upload_path_detail'],strtotime($this->data['file_datetime']));
             $ext = substr($this->data['file_local_name'],strrpos($this->data['file_local_name'],'.')+1);
             $filename = substr($this->data['file_local_name'],0,strrpos($this->data['file_local_name'],'.'));
-            return $this->config['cdn'].'/'.urlencode(base64_encode($date.'/'.$filename)).'.'.$ext;
+            return $this->config['cdn'].'/rester/'.$this->data['file_module'].'/'.urlencode(base64_encode($date.'/'.$filename)).'.'.$ext;
         }
         else
         {
