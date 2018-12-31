@@ -34,12 +34,11 @@ class cfg
 
     /**
      * @param string $module
-     *
      * @return string
      */
     public static function change_module($module)
     {
-        $old = self::Get('module');
+        $old = self::module();
         self::$data['module'] = $module;
         return $old;
     }
@@ -48,6 +47,17 @@ class cfg
      * @return string
      */
     public static function proc() { return self::Get('proc'); }
+
+    /**
+     * @param string $proc
+     * @return string
+     */
+    public static function change_proc($proc)
+    {
+        $old = self::proc();
+        self::$data['proc'] = $proc;
+        return $old;
+    }
 
     /**
      * @return string
