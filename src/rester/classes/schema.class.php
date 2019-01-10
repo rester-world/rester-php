@@ -198,6 +198,29 @@ class schema
     }
 
     /**
+     * @param $data
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    protected function validate_bool($data)
+    {
+        if(is_bool($data) || $data==0 || $data==1) return $data;
+        throw new Exception("Invalid data(bool) : {$data}");
+    }
+
+    /**
+     * @param $data
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    protected function validate_boolean($data)
+    {
+        return $this->validate_bool($data);
+    }
+
+    /**
      * 날짜 형식 채크
      *
      * @param string $data
