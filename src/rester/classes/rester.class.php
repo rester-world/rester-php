@@ -36,6 +36,7 @@ class rester
         http_response_code(self::$response_code);
         if(self::$header) header("Content-type: ".self::$header);
         else header("Content-type: application/json; charset=UTF-8");
+        header("Access-Control-Allow-Origin: *");
     }
 
     /**
@@ -235,7 +236,8 @@ class rester
     /**
      * @param string $module
      * @param string $proc
-     * @param array $query
+     * @param array  $query
+     *
      * @return mixed
      */
     public static function call_module($module, $proc, $query=[])
@@ -243,6 +245,7 @@ class rester
         $old_module = cfg::change_module($module);
         $old_proc = cfg::change_proc($proc);
 
+        $res = false;
         if($path = self::path_proc())
         {
             $res = include $path;
@@ -255,7 +258,6 @@ class rester
 
         cfg::change_proc($old_proc);
         cfg::change_module($old_module);
-
         return $res;
     }
 
