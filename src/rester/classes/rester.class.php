@@ -103,6 +103,30 @@ class rester
     }
 
     /**
+     * verify request parameter
+     * check body | query string
+     *
+     * @throws Exception
+     */
+    protected static function check_parameter()
+    {
+        if($path_verify = self::path_verify())
+        {
+            self::reset_parameter();
+            $schema = new schema($path_verify);
+            try
+            {
+                if($data = $schema->validate(cfg::parameter()))
+                    foreach($data as $k => $v) rester::set_request_param($k, $v);
+            }
+            catch (Exception $e)
+            {
+                throw new Exception("rester::check_parameter() - ".$e->getMessage());
+            }
+        }
+    }
+
+    /**
      * run rester
      *
      * @throws Exception
@@ -122,23 +146,8 @@ class rester
             include $path_verify_func;
         }
 
-        // ---------------------------------------------------------------------
-        /// verify request parameter
-        /// check body | query string
-        // ---------------------------------------------------------------------
-        if($path_verify = self::path_verify())
-        {
-            $schema = new schema($path_verify);
-            try
-            {
-                if($data = $schema->validate(cfg::parameter()))
-                    foreach($data as $k => $v) rester::set_request_param($k, $v);
-            }
-            catch (Exception $e)
-            {
-                throw new Exception("rester::run() verify param - ".$e->getMessage());
-            }
-        }
+        // parameter
+        self::check_parameter();
 
         // ---------------------------------------------------------------------
         /// check file
@@ -240,16 +249,7 @@ class rester
         {
             $_POST = $query;
             cfg::init_parameter();
-
-            ///=====================================================================
-            /// check request parameter
-            ///=====================================================================
-            if($path_verify = self::path_verify())
-            {
-                $schema = new schema($path_verify);
-                if($data = $schema->validate(cfg::parameter()))
-                    foreach($data as $k => $v) rester::set_request_param($k, $v);
-            }
+            self::check_parameter();
 
             if($path = self::path_proc())
             {
@@ -264,7 +264,7 @@ class rester
         catch (Exception $e)
         {
             self::failure();
-            self::error("파라미터 검증 실패 | query: ".$e->getMessage());
+            self::error($e->getMessage());
         }
 
         cfg::change_proc($old_proc);
@@ -289,16 +289,7 @@ class rester
         {
             $_POST = $query;
             cfg::init_parameter();
-
-            ///=====================================================================
-            /// check request parameter
-            ///=====================================================================
-            if($path_verify = self::path_verify())
-            {
-                $schema = new schema($path_verify);
-                if($data = $schema->validate(cfg::parameter()))
-                    foreach($data as $k => $v) rester::set_request_param($k, $v);
-            }
+            self::check_parameter();
 
             if($path = self::path_proc())
             {
@@ -313,7 +304,7 @@ class rester
         catch (Exception $e)
         {
             self::failure();
-            self::error("파라미터 검증 실패 | query: ".$e->getMessage());
+            self::error($e->getMessage());
         }
 
         cfg::change_proc($old_proc);
@@ -509,6 +500,7 @@ class rester
      * @param string $value
      */
     public static function set_request_param($key, $value) { self::$request_param[$key] = $value; }
+    public static function reset_parameter() { self::$request_param = []; }
 
     /**
      * 요청값 반환
