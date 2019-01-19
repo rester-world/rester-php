@@ -5,6 +5,8 @@
  *
  * 스키마 정의를 받아서 validation 을 수행해 줌
  *
+ * 주의사항: 오류사항 발생시 항상 Exception 처리를 해 준다
+ *
  */
 class schema
 {
@@ -37,12 +39,12 @@ class schema
                 $ext = array_pop(explode('.',$schema));
                 if($ext == 'ini') $this->set_schema_file_ini($schema);
                 elseif($ext == 'json') $this->set_schema_file_json($schema);
-                else throw new Exception("Not supported file format.");
+                else throw new Exception("schema - Not supported file format.");
             }
             // error : not support
             else
             {
-                throw new Exception("Not supported schema format.(.ini, .json)");
+                throw new Exception("schema - Not supported schema format.(.ini, .json)");
             }
         }
         catch (Exception $e) { throw $e; }
@@ -57,8 +59,7 @@ class schema
      */
     protected function set_schema_file_json($file_path)
     {
-        try { $this->set_schema(json_decode(file_get_contents($file_path),true)); }
-        catch (Exception$e) { throw $e; }
+        $this->set_schema(json_decode(file_get_contents($file_path),true));
     }
 
     /**
@@ -70,8 +71,7 @@ class schema
      */
     protected function set_schema_file_ini($file_path)
     {
-        try { $this->set_schema(parse_ini_file($file_path,true, INI_SCANNER_RAW)); }
-        catch (Exception$e) { throw $e; }
+        $this->set_schema(parse_ini_file($file_path,true, INI_SCANNER_RAW));
     }
 
     /**
@@ -128,58 +128,62 @@ class schema
         }
 
         $result = array();
-        // set default value
+
         foreach($this->schema as $k=>$v)
         {
-            if(isset($v[self::FIELD_DEFAULT])) $result[$k] = $v[self::FIELD_DEFAULT];
-        }
+            $schema = $v;
+            $default = false;
+            if(isset($v[self::FIELD_DEFAULT])) $default = $v[self::FIELD_DEFAULT];
+            $require = $v[self::FIELD_REQUIRE]=='true'?true:false;
 
-        foreach ($data as $k=>$v)
-        {
-            if(!($schema = $this->schema[$k])) continue;
+            $type = $v[self::FIELD_TYPE];
 
-            $type = $schema[self::FIELD_TYPE];
-            $require = $schema[self::FIELD_REQUIRE]=='true'?true:false;
+            $_result = $default;
 
-            switch ($type)
+            if($data[$k])
             {
-                // Using Regular Expressions : preg_match
-                case self::TYPE_REGEX: if (preg_match($schema['regexp'], $v, $matches)) $result[$k] = $matches[0]; break;
+                switch ($type)
+                {
+                    // Using Regular Expressions : preg_match
+                    case self::TYPE_REGEX:
+                        if (preg_match($schema[self::FIELD_REGEXP], $data[$k], $matches))
+                            $_result = $matches[0];
+                        break;
 
-                // php validate function
-                // filter_val
-                case self::TYPE_FILTER:
+                    // php validate function
+                    // filter_val
+                    case self::TYPE_FILTER:
 
-                    $filter = null;
-                    $options = null;
-                    eval("\$filter = " . $schema[self::TYPE_FILTER] . ";");
-                    if($schema[self::FIELD_OPTIONS]) eval("\$options = " . $schema[self::FIELD_OPTIONS] . ";");
+                        $filter = null;
+                        $options = null;
+                        eval("\$filter = " . $schema[self::TYPE_FILTER] . ";");
+                        if($schema[self::FIELD_OPTIONS]) eval("\$options = " . $schema[self::FIELD_OPTIONS] . ";");
 
-                    if(!is_integer($filter)) throw new Exception($k.'='.$v." : Invalid filter format.");
-                    if($options !== null && !is_integer($options)) throw new Exception($k.'='.$v." : Filter option format is invalid.");
-                    if (false !== ($clean = filter_var($v, $filter, $options))) $result[$k] = $clean;
-                    break;
+                        if(!is_integer($filter)) throw new Exception("Invalid filter format.({$k}={$data[$k]})");
+                        if($options !== null && !is_integer($options)) throw new Exception("Filter option format is invalid.({$k}={$data[$k]})");
+                        if (false !== ($clean = filter_var($data[$k], $filter, $options))) $_result = $clean;
+                        break;
 
-                // User Define Function
-                // 사용자 정의 함수는 호출 가능할 때만 실행
-                case self::TYPE_FUNCTION:
-                    $func = $k;
-                    if (is_callable($func) && ($clean = $func($v))) $result[$k] = $clean;
-                    break;
+                    // User Define Function
+                    // 사용자 정의 함수는 호출 가능할 때만 실행
+                    case self::TYPE_FUNCTION:
+                        $func = $k;
+                        if (is_callable($func) && ($clean = $func($data[$k]))) $_result = $clean;
+                        break;
 
-                // rester define function
-                default:
-                    $func = 'validate_' . $this->schema[$k]['type'];
-                    if (method_exists($this, $func)) $result[$k] = $this->$func($v);
-                    else throw new Exception($k.'='.$v." : There is no Rester definition function.");
+                    // rester define function
+                    default:
+                        $func = 'validate_' . $schema[self::FIELD_TYPE];
+                        if (method_exists($this, $func)) $_result = $this->$func($data[$k]);
+                        else throw new Exception("There is no filter function.({$k}={$data[$k]})");
+                }
             }
 
-            // Check Require value
-            if(!isset($result[$k]) && $require)
+            if($require && !$_result)
             {
                 throw new Exception($k." : The required input data does not have a value or pass validation.");
             }
-
+            $result[$k] = $_result;
         }
 
         return $result;
