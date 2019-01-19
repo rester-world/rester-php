@@ -1,7 +1,9 @@
 <?php
 /**
  * Class db
- * @author kevinpark@webace.co.kr
+ * PDO 인스턴스를 생성하고 관리함
+ * 여러개의 데이터베이스를 연결할 수 있도록 디자인 됨
+ * 사실상 rester-sql 을 사용하면 호출할 필요가 없는 클래스
  */
 class db
 {

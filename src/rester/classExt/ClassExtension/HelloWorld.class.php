@@ -3,7 +3,7 @@ namespace ClassExtension;
 class HelloWorld
 {
     /**
-     * Helloworld constructor.
+     * Hello world constructor.
      */
     public function __construct()
     {
