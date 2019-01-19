@@ -1,18 +1,12 @@
 <?php
-/**
- * Class cfg
- */
 class cfg
 {
     const query_version = 'v';
     const query_module = 'm';
     const query_proc = 'proc';
 
-    const key_module = 'm';
-    const key_function = 'fn';
-
-    private static $name = 'rester.ini';  // 파일명
-    private static $data;	// 설정정보
+    private static $name = 'rester.ini';  // config file name
+    private static $data;	// config data
 
     /**
      * @var array default configuration
@@ -78,6 +72,31 @@ class cfg
      * @return array
      */
     public static function cache() { return self::Get('cache'); }
+
+    /**
+     * extract body parameter from json body, POST and GET
+     */
+    public static function init_parameter()
+    {
+        // Extract request parameter
+        // Json, POST, GET
+        self::$data['request-body'] = array();
+        if($body = json_decode(file_get_contents('php://input'),true))
+        {
+            self::$data['request-body'] = $body;
+        }
+        else
+        {
+            self::$data['request-body'] = $_POST;
+            unset($_POST);
+        }
+
+        foreach ($_GET as $k=>$v)
+        {
+            if(!isset(self::$data['request-body'][$k])) self::$data['request-body'][$k] = $v;
+        }
+        unset($_GET);
+    }
 
     /**
      * 기본정보 초기화
@@ -184,34 +203,13 @@ class cfg
 
         if($cfg['access_control']['allows_origin']!='*')
         {
-            if(!is_array($cfg['access_control']['allows_origin']))
-                $cfg['access_control']['allows_origin'] = array($cfg['access_control']['allows_origin']);
-            if(!in_array($access_ip,$cfg['access_control']['allows_origin']))
-                throw new Exception("Access denied.(Not allowed ip address:{$access_ip})");
+            if(!is_array($cfg['access_control']['allows_origin'])) $cfg['access_control']['allows_origin'] = array($cfg['access_control']['allows_origin']);
+            if(!in_array($access_ip,$cfg['access_control']['allows_origin'])) throw new Exception("Access denied.(Not allowed ip address:{$access_ip})");
         }
-
-        //--------------------------------------------------------------------------------------
-        /// Extract request parameter
-        /// Json, POST, GET
-        //--------------------------------------------------------------------------------------
-        $cfg['request-body'] = array();
-        if($body = json_decode(file_get_contents('php://input'),true))
-        {
-            $cfg['request-body'] = $body;
-        }
-        else
-        {
-            $cfg['request-body'] = $_POST;
-            unset($_POST);
-        }
-
-        foreach ($_GET as $k=>$v)
-        {
-            if(!isset($cfg['request-body'][$k])) $cfg['request-body'][$k] = $v;
-        }
-        unset($_GET);
 
         self::$data = $cfg;
+
+        self::init_parameter();
     }
 
     /**
