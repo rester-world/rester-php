@@ -296,6 +296,7 @@ class file
                     throw new Exception("File upload failed: Max upload file count({$this->config['max_count']}) Upload({$upload_file_count})");
                 }
 
+
                 // 파일개수만큼 돌기
                 foreach($_FILES[$name]['name'] as $k=>$v)
                 {
@@ -321,7 +322,7 @@ class file
                             umask(0);
                             chmod($dest_file, 0664);
 
-                            $uploaded_files[] = array(
+                            $uploaded_files[$k] = array(
                                 'file_module'=>$this->module_name,
                                 'file_name'=>$file_name,
                                 'file_local_name'=>$real_file_name,
