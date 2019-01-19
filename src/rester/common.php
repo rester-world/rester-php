@@ -1,8 +1,7 @@
 <?php
 /**
  *  @file common.php
- *  @brief  가장 먼저 실행되는 파일이면서
- *          각종 초기화를 수행함
+ *  @brief  가장 먼저 실행되는 파일이면서 각종 초기화를 수행함
  */
 define('__RESTER__', TRUE);
 
