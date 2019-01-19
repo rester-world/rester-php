@@ -13,12 +13,14 @@ class rester
     const file_verify = 'verify.ini';
     const file_config = 'config.ini';
 
-    protected static $request_param = array();
+    protected static $request_param = [];
     protected static $response_body = null;
     protected static $response_code = 200;
 
     protected static $success = true;
-    protected static $msg = array();
+    protected static $msg = [];
+    protected static $warning = [];
+    protected static $error = [];
 
     protected static $cfg;
     protected static $check_auth = false;
@@ -34,8 +36,7 @@ class rester
     public static function run_headers()
     {
         http_response_code(self::$response_code);
-        if(self::$header) header("Content-type: ".self::$header);
-        else header("Content-type: application/json; charset=UTF-8");
+        header("Content-type: application/json; charset=UTF-8");
         header("Access-Control-Allow-Origin: *");
     }
 
@@ -86,13 +87,17 @@ class rester
             $response_body = curl_exec($ch);
             curl_close($ch);
             $res = json_decode($response_body,true);
-            if($res['success']) return $res['data'];
-            throw new Exception($res['msg']);
+            if(!$res['success'])
+            {
+                rester::failure();
+                rester::error(implode('<br/>',$res['error']));
+            }
+            return $res['data'];
         }
         catch (Exception $e)
         {
             rester::failure();
-            rester::msg($e->getMessage());
+            rester::error($e->getMessage());
             return false;
         }
     }
@@ -107,19 +112,20 @@ class rester
         $module = cfg::module();
         $proc = cfg::proc();
         $method = cfg::request_method();
+        $response_data = null;
 
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         /// include verify function
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         if($path_verify_func = self::path_verify_func())
         {
             include $path_verify_func;
         }
 
-        ///=====================================================================
-        /// check request parameter
+        // ---------------------------------------------------------------------
+        /// verify request parameter
         /// check body | query string
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         if($path_verify = self::path_verify())
         {
             $schema = new schema($path_verify);
@@ -130,106 +136,88 @@ class rester
             }
             catch (Exception $e)
             {
-                throw new Exception("request-body | query: ".$e->getMessage());
+                throw new Exception("rester::run() verify param - ".$e->getMessage());
             }
         }
 
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         /// check file
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         $path_proc = self::path_proc();
         if(false === $path_proc)
         {
             throw new Exception("Not found procedure. Module: {$module}, Procedure: {$proc} ");
         }
 
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         /// check auth
-        ///=====================================================================
-        if(self::$check_auth) { session::get(cfg::token()); }
-
-        ///=====================================================================
-        /// check cache
-        ///=====================================================================
-        $redis_cfg = cfg::cache();
-        if(self::$use_cache && !($redis_cfg['host'] && $redis_cfg['port'])) throw new Exception("Require cache config to use cache.");
-
-        $response_data = null;
-        $redis = new Redis();
-        $cache_key = implode('_', array_merge(array($module,$proc,$method),self::param()));
-        if(self::$use_cache)
+        // ---------------------------------------------------------------------
+        if(self::$check_auth)
         {
-            $redis->connect($redis_cfg['host'], $redis_cfg['port']);
-            if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
-
-            // get cached data
-            $response_data = $redis->get($cache_key);
-            $_d = json_decode($response_data,true);
-            if(is_array($_d)) $response_data = $_d;
-
-            // get cached header
-            if(self::$use_cache_header)
-            {
-                self::$header = $redis->get('header_'.$cache_key);
-                $_header = json_decode(self::$header,true);
-                if(is_array($_header)) self::$header = $_header;
-            }
+            session::get(cfg::token());
         }
 
-        ///=====================================================================
+        // ---------------------------------------------------------------------
         /// include config.ini
-        ///=====================================================================
-        $cfg = array();
+        // ---------------------------------------------------------------------
+        $cfg = [];
         if($path = self::path_cfg())
         {
             $cfg = parse_ini_file($path,true, INI_SCANNER_TYPED);
         }
         self::$cfg = $cfg;
 
-        ///=====================================================================
-        /// include procedure
-        ///=====================================================================
-        if(!$response_data) { $response_data = include $path_proc; }
-
-        // cached header
-        if(self::$use_cache_header && !$redis->get('header_'.$cache_key))
+        // ---------------------------------------------------------------------
+        /// check cache
+        // ---------------------------------------------------------------------
+        if(self::$use_cache)
         {
-            $_header = self::$header;
-            if(is_array($_header)) $_header = json_encode($_header);
-            $redis->set('header_'.$cache_key,$_header,self::$cache_timeout);
-        }
+            $redis_cfg = cfg::cache();
+            if(!($redis_cfg['host'] && $redis_cfg['port']))
+                throw new Exception("Require cache config to use cache.");
 
-        // cached body
-        if(self::$use_cache && !$redis->get($cache_key))
-        {
-            $_d = $response_data;
-            if(is_array($_d)) $_d = json_encode($_d);
-            $redis->set($cache_key,$_d,self::$cache_timeout);
-        }
-
-        // close redis
-        if(self::$use_cache) { $redis->close(); }
-
-        ///=====================================================================
-        /// print image or file
-        ///=====================================================================
-        if($mime = self::$header)
-        {
-            if(is_array($mime))
+            $redis = new Redis();
+            $cache_key = implode('_', array_merge(array($module,$proc,$method),self::param()));
+            if($redis->connect($redis_cfg['host'], $redis_cfg['port'], 2000))
             {
-                foreach($mime as $h) { header($h); }
+                if($redis_cfg['auth'])
+                {
+                    if(!$redis->auth($redis_cfg['auth']))
+                    {
+                        throw new Exception("Can not authenticate redis server. Check the config [auth].");
+                    }
+                }
+                // get cached data
+                $response_data = $redis->get($cache_key);
+
+                // 캐시된 데이터가 배열일 경우
+                $_d = @json_decode($response_data,true);
+                if(is_array($_d)) $response_data = $_d;
+
+                // 캐시된 데이터가 없을 경우
+                // 프로시저를 인크루드하고 캐쉬서버에 저장함
+                if(!$response_data)
+                {
+                    $__cache = $response_data = include $path_proc;
+                    // 결과가 배열일 경우 encode 함
+                    if(is_array($__cache)) $__cache = json_encode($__cache);
+                    $redis->set($cache_key,$__cache,self::$cache_timeout);
+                }
             }
             else
             {
-                header('Content-Type: '.$mime);
+                // redis 접속불가
+                throw new Exception("Can not access redis server. Check the config [host and port].");
             }
-            echo $response_data;
-            exit;
+            // close redis
+            $redis->close();
+        }
+        else
+        {
+            $response_data = include $path_proc;
         }
 
-        ///=====================================================================
-        /// return json body
-        ///=====================================================================
+        // return json body
         return $response_data;
     }
 
@@ -239,6 +227,7 @@ class rester
      * @param array  $query
      *
      * @return mixed
+     * @throws Exception
      */
     public static function call_module($module, $proc, $query=[])
     {
@@ -246,18 +235,88 @@ class rester
         $old_proc = cfg::change_proc($proc);
 
         $res = false;
-        if($path = self::path_proc())
+
+        try
         {
-            $res = include $path;
+            $_POST = $query;
+            cfg::init_parameter();
+
+            ///=====================================================================
+            /// check request parameter
+            ///=====================================================================
+            if($path_verify = self::path_verify())
+            {
+                $schema = new schema($path_verify);
+                if($data = $schema->validate(cfg::parameter()))
+                    foreach($data as $k => $v) rester::set_request_param($k, $v);
+            }
+
+            if($path = self::path_proc())
+            {
+                $res = include $path;
+            }
+            else
+            {
+                self::failure();
+                self::error("Can not found module: {$module}");
+            }
         }
-        else
+        catch (Exception $e)
         {
             self::failure();
-            self::msg("Can not found module: {$module}");
+            self::error("파라미터 검증 실패 | query: ".$e->getMessage());
         }
 
         cfg::change_proc($old_proc);
         cfg::change_module($old_module);
+        return $res;
+    }
+
+    /**
+     * @param string $proc
+     * @param array  $query
+     *
+     * @return mixed
+     * @throws Exception
+     */
+    public static function call_proc($proc, $query=[])
+    {
+        $old_proc = cfg::change_proc($proc);
+
+        $res = false;
+
+        try
+        {
+            $_POST = $query;
+            cfg::init_parameter();
+
+            ///=====================================================================
+            /// check request parameter
+            ///=====================================================================
+            if($path_verify = self::path_verify())
+            {
+                $schema = new schema($path_verify);
+                if($data = $schema->validate(cfg::parameter()))
+                    foreach($data as $k => $v) rester::set_request_param($k, $v);
+            }
+
+            if($path = self::path_proc())
+            {
+                $res = include $path;
+            }
+            else
+            {
+                self::failure();
+                self::error("Can not found procedure: {$proc}");
+            }
+        }
+        catch (Exception $e)
+        {
+            self::failure();
+            self::error("파라미터 검증 실패 | query: ".$e->getMessage());
+        }
+
+        cfg::change_proc($old_proc);
         return $res;
     }
 
@@ -492,6 +551,34 @@ class rester
     {
         if($msg===null) return self::$msg;
         else self::$msg[] = $msg;
+        return null;
+    }
+
+    /**
+     * Add warning message
+     *
+     * @param null|string $msg
+     *
+     * @return array
+     */
+    public static function warning($msg=null)
+    {
+        if($msg===null) return self::$warning;
+        else self::$warning[] = $msg;
+        return null;
+    }
+
+    /**
+     * Add error
+     *
+     * @param null|string $msg
+     *
+     * @return array
+     */
+    public static function error($msg=null)
+    {
+        if($msg===null) return self::$error;
+        else self::$error[] = $msg;
         return null;
     }
 
