@@ -3,6 +3,7 @@ $response_body = array(
     'success'=>false,
     'msg'=>'',
     'warning'=>[],
+    'error'=>[],
     'data'=>''
 );
 
@@ -12,15 +13,15 @@ try
     cfg::init();
     $response_body['data'] = rester::run();
     $response_body['msg'] = implode(',', rester::msg());
+    $response_body['error'] = rester::error();
     if(rester::isSuccess()) $response_body['success'] = true;
 }
 catch (Exception $e)
 {
-    $response_body['msg'] = $e->getMessage();
+    $response_body['error'][] = $e->getMessage();
 }
 
 // print response code & response header
 rester::run_headers();
-
 echo json_encode($response_body);
 
