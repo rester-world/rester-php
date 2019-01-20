@@ -75,26 +75,34 @@ class cfg
 
     /**
      * extract body parameter from json body, POST and GET
+     *
+     * json 으로 데이터가 넘어왔을 경우 (php://input)
+     * php://input 가 unset이 되지 않아 call_module 함수를 호출할 때에 파라미터 변경이 되지 않는 문게가 있었음
+     * get < json < post 순서로 덮어 씌우는 방식으로 해결함
      */
     public static function init_parameter()
     {
         // Extract request parameter
         // Json, POST, GET
-        self::$data['request-body'] = array();
-        if($body = json_decode(file_get_contents('php://input'),true))
+        $json = json_decode(file_get_contents('php://input'),true);
+        if(!$json) $json = [];
+
+        if(!is_array($_POST)) $_POST = [];
+        if(!is_array($_GET)) $_GET = [];
+
+        self::$data['request-body'] = $_GET;
+
+        foreach($json as $k=>$v)
         {
-            self::$data['request-body'] = $body;
-        }
-        else
-        {
-            self::$data['request-body'] = $_POST;
-            unset($_POST);
+            self::$data['request-body'][$k] = $v;
         }
 
-        foreach ($_GET as $k=>$v)
+        foreach($_POST as $k=>$v)
         {
-            if(!isset(self::$data['request-body'][$k])) self::$data['request-body'][$k] = $v;
+            self::$data['request-body'][$k] = $v;
         }
+
+        unset($_POST);
         unset($_GET);
     }
 
