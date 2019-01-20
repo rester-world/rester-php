@@ -236,7 +236,6 @@ class rester
      * @param array  $query
      *
      * @return mixed
-     * @throws Exception
      */
     public static function call_module($module, $proc, $query=[])
     {
@@ -277,7 +276,6 @@ class rester
      * @param array  $query
      *
      * @return mixed
-     * @throws Exception
      */
     public static function call_proc($proc, $query=[])
     {
