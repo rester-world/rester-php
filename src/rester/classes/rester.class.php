@@ -236,7 +236,6 @@ class rester
      * @param array  $query
      *
      * @return mixed
-     * @throws Exception
      */
     public static function call_module($module, $proc, $query=[])
     {
@@ -248,6 +247,7 @@ class rester
         try
         {
             $_POST = $query;
+            unset($query);
             cfg::init_parameter();
             self::check_parameter();
 
@@ -277,7 +277,6 @@ class rester
      * @param array  $query
      *
      * @return mixed
-     * @throws Exception
      */
     public static function call_proc($proc, $query=[])
     {
