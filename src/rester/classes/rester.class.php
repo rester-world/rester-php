@@ -247,6 +247,7 @@ class rester
         try
         {
             $_POST = $query;
+            unset($query);
             cfg::init_parameter();
             self::check_parameter();
 
