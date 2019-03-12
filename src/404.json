@@ -5,8 +5,8 @@
       "URL rule error"
     ],
     "data": {
-        "rule": "http://your-domain/v{version}/{module}/{function}",
-        "online-document": "http://doc.daium.kr",
-        "copyright": "rester.kr"
+        "rule": "http://host/v{version}/{module}/{function}",
+        "online-document": "https://github.com/rester-world/rester-php/wiki",
+        "copyright": "rester.io"
     }
 }

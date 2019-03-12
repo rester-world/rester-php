@@ -1,4 +1,4 @@
-FROM kevinpark/nginx-php-redis
+FROM rester/rester-docker
 MAINTAINER Kevin Park<kevinpark@webace.co.kr>
 
 RUN mkdir /var/www/cfg
@@ -10,6 +10,4 @@ ADD default.conf /etc/nginx/sites-available/default.conf
 VOLUME ["/var/www/cfg"]
 VOLUME ["/var/www/html/modules"]
 VOLUME ["/var/www/html/rester/lib"]
-VOLUME ["/var/www/html/rester/classExt"]
-VOLUME ["/var/www/html/rester/files"]
 
