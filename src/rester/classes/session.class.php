@@ -16,7 +16,7 @@ class session
     {
         $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.';
         $token = '';
-        for ($i = 0; $i < 20; $i++) {
+        for ($i = 0; $i < 40; $i++) {
             $token .= $characters[rand(0, strlen($characters))];
         }
         return $token;
