@@ -7,48 +7,17 @@ services:
   container_name: redis
   image: redis
   restart: always
-  ports:
-  - 6379:6379
-
-# sample database
- db:
-  container_name: db
-  image: mariadb
-  restart: always
-  ports:
-    - 3306:3306
-  volumes:
-    - //Github/rester-php/example_db.sql:/docker-entrypoint-initdb.d/dump.sql
-  environment:
-   MYSQL_RANDOM_ROOT_PASSWORD: "yes"
-   MYSQL_DATABASE: "example"
-   MYSQL_USER: "rester"
-   MYSQL_PASSWORD: "rester"
-
- sql:
-  container_name: sql
-  image: kevinpark/rester-sql
-  restart: always
-  links:
-  - redis:cache.rester.kr
-  - db:db.rester.kr
-  volumes:
-  - //Github/rester-sql/src/rester:/var/www/html/rester
-  - //Github/rester-php/sql:/var/www/html/modules
-  - //Github/rester-php/sql.cfg:/var/www/cfg:ro
-  ports:
-  - '8081:80'
 
  rester-php:
   container_name: rester-php
-  image: kevinpark/nginx-php-redis
+  image: rester/rester-docker
   restart: always
   links:
-    - redis:cache.rester.kr
-    - sql:sql.rester.kr
+    - redis:cache.rester.io
   volumes:
-   - //Github/rester-php/default.conf:/etc/nginx/sites-available/default.conf:ro
-   - //Github/rester-php/src:/var/www/html
-   - //Github/rester-php/cfg:/var/www/cfg:ro
+   - //Github/RESTer/rester-php/default.conf:/etc/nginx/sites-available/default.conf:ro
+   - //Github/RESTer/rester-php/src:/var/www/html
+   - //Github/RESTer/rester-php/cfg:/var/www/cfg:ro
   ports:
-  - '80:80'
+   - '80:80'
+   - '443:443'

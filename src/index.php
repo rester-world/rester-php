@@ -1,27 +1,19 @@
 <?php
-$response_body = array(
-    'success'=>false,
-    'msg'=>[],
-    'warning'=>[],
-    'error'=>[],
-    'data'=>''
-);
+
+global $current_rester;
 
 try
 {
     include_once('./rester/common.php');
-    cfg::init();
-    $response_body['data'] = rester::run();
-    $response_body['msg'] = rester::msg();
-    $response_body['error'] = rester::error();
-    if(rester::isSuccess()) $response_body['success'] = true;
+    $rester = new rester(cfg::module(), cfg::proc(), cfg::method(), cfg::request_body());
+    $rester->set_public_access();
+    $current_rester = $rester;
+    rester_response::body($rester->run());
 }
 catch (Exception $e)
 {
-    $response_body['error'][] = $e->getMessage();
+    rester_response::error($e->getMessage());
+    rester_response::error_trace(explode("\n",$e->getTraceAsString()));
 }
 
-// print response code & response header
-rester::run_headers();
-echo json_encode($response_body);
-
+rester_response::run();

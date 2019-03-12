@@ -1,8 +1,8 @@
 <?php if(!defined('__RESTER__')) exit;
 
-rester::msg("Hello RESTer-SQL world!");
+rester_response::msg("Hello RESTer-SQL world!");
 return [
-    'Cache example (10 second)',
+    'Cache example (5 second)',
     'Current Datetime'.date("Y-m-d H:i:s")
 ];
 

@@ -1,6 +1,6 @@
 <?php if(!defined('__RESTER__')) exit;
 
-rester::msg("Hello RESTer-SQL world!");
+rester_response::msg("Hello RESTer-SQL world!");
 
 $session_id = session::id();
 return array(

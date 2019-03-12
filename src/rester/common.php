@@ -3,7 +3,63 @@
  *  @file common.php
  *  @brief  가장 먼저 실행되는 파일이면서 각종 초기화를 수행함
  */
+
 define('__RESTER__', TRUE);
+
+//-------------------------------------------------------------------------------
+/// include classes
+//-------------------------------------------------------------------------------
+require_once dirname(__FILE__).'/common.lib.php';
+require_once dirname(__FILE__).'/classes/cfg.class.php';
+require_once dirname(__FILE__).'/classes/session.class.php';
+require_once dirname(__FILE__).'/classes/file.class.php';
+require_once dirname(__FILE__).'/classes/rester_response.class.php';
+require_once dirname(__FILE__).'/classes/rester_verify.class.php';
+require_once dirname(__FILE__).'/classes/rester_config.class.php';
+require_once dirname(__FILE__).'/classes/rester.class.php';
+
+//-------------------------------------------------------------------------------
+/// Include lib files
+//-------------------------------------------------------------------------------
+foreach (glob(dirname(__FILE__) . '/lib/lib.*.php') as $filename)
+{
+    include_once $filename;
+}
+
+// -----------------------------------------------------------------------------
+/// catch 되지 않은 예외에 대한 처리함수
+// -----------------------------------------------------------------------------
+set_exception_handler(function($e) {
+    rester_response::error_trace(explode("\n",$e));
+    rester_response::run();
+});
+
+// -----------------------------------------------------------------------------
+/// init config
+// -----------------------------------------------------------------------------
+try
+{
+    cfg::init();
+}
+catch (Exception $e)
+{
+    rester_response::error($e->getMessage());
+    rester_response::error_trace(explode("\n",$e->getTraceAsString()));
+}
+
+// -----------------------------------------------------------------------------
+/// 오류출력설정
+// -----------------------------------------------------------------------------
+if (cfg::debug_mode())
+    error_reporting(E_ALL ^ (E_NOTICE | E_STRICT | E_WARNING | E_DEPRECATED));
+else
+    error_reporting(0);
+
+// -----------------------------------------------------------------------------
+/// timezone 설정
+/// rester.ini
+// -----------------------------------------------------------------------------
+date_default_timezone_set(cfg::timezone());
 
 //-------------------------------------------------------------------------------
 /// set php.ini
@@ -69,41 +125,5 @@ if(is_array($_POST)) array_walk_recursive($_POST, function(&$item){ $item = adds
 if(is_array($_GET)) array_walk_recursive($_GET, function(&$item){ $item = addslashes($item); });
 if(is_array($_COOKIE)) array_walk_recursive($_COOKIE, function(&$item){ $item = addslashes($item); });
 
-//-------------------------------------------------------------------------------
-/// Load basic classes
-//-------------------------------------------------------------------------------
-require_once dirname(__FILE__).'/classes/cfg.class.php';
-require_once dirname(__FILE__).'/classes/db.class.php';
-require_once dirname(__FILE__).'/classes/file.class.php';
-require_once dirname(__FILE__).'/classes/schema.class.php';
-require_once dirname(__FILE__).'/classes/session.class.php';
-require_once dirname(__FILE__).'/classes/rester.class.php';
 
 
-//-------------------------------------------------------------------------------
-/// autoloader
-/// namespace 는 폴더로 구분
-/// classExt 폴더만 참조함
-//-------------------------------------------------------------------------------
-spl_autoload_register(function($class_name)
-{
-    $class_name = implode('/',array_filter(explode('\\',$class_name), function($item) { return ($item!='Rester');}));
-    $classExt = dirname(__FILE__).'/classExt/'.$class_name.'.class.php';
-    if(is_file($classExt)) include_once $classExt;
-    else {
-        echo "No search class file : ".$class_name;
-        exit;
-    }
-});
-
-//-------------------------------------------------------------------------------
-/// Include lib files
-/// 01. Default library include
-/// 02. Library folder include
-//-------------------------------------------------------------------------------
-include_once(dirname(__FILE__) . '/common.lib.php');
-
-foreach (glob(dirname(__FILE__) . '/lib/lib.*.php') as $filename)
-{
-    include_once $filename;
-}
