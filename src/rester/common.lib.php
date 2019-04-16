@@ -88,6 +88,8 @@ function request_procedure($proc, $method, $query=[])
 }
 
 /**
+ * 외부 모듈 호출
+ *
  * @param string $name
  * @param string $module
  * @param string $proc
@@ -126,38 +128,4 @@ function request($name, $module, $proc, $param=[])
         rester_response::error($e->getMessage());
         return false;
     }
-}
-
-/**
- * @param string $module
- * @param string $proc
- * @param array $query
- * @return bool|string
- */
-function url_module($module, $proc, $query=[])
-{
-    if(!$module || !$proc) return false;
-    $http_host = cfg::Get('default','http_host');
-    $_query = [];
-    foreach ($query as $k=>$v) { $_query[] = $k.'='.$v; }
-    $_query = trim(implode('&',$_query));
-    $_query = $_query?'?'.$_query:'';
-    return  $http_host."/v1/{$module}/{$proc}{$_query}";
-}
-
-/**
- * @param string $proc
- * @param array $query
- * @return string|bool
- */
-function url_proc($proc, $query=[])
-{
-    if(!$proc) return false;
-    $http_host = cfg::Get('default','http_host');
-    $module = cfg::module();
-    $_query = [];
-    foreach ($query as $k=>$v) { $_query[] = $k.'='.$v; }
-    $_query = trim(implode('&',$_query));
-    $_query = $_query?'?'.$_query:'';
-    return  $http_host."/v1/{$module}/{$proc}{$_query}";
 }
