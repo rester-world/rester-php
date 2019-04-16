@@ -207,7 +207,10 @@ class rester_verify
                     // 사용자 정의 함수는 호출 가능할 때만 실행
                     case self::TYPE_FUNCTION:
                         $func = $k;
-                        if (is_callable($func) && ($clean = $func($data[$k]))) $result = $clean;
+                        if (is_callable($func))
+                        {
+                            $result = $func($data[$k]);
+                        }
                         break;
 
                     // rester define function

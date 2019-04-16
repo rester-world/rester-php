@@ -88,6 +88,8 @@ function request_procedure($proc, $method, $query=[])
 }
 
 /**
+ * 외부 서비스 호출
+ *
  * @param string $name
  * @param string $module
  * @param string $proc
@@ -95,7 +97,7 @@ function request_procedure($proc, $method, $query=[])
  *
  * @return bool|array
  */
-function request($name, $module, $proc, $param=[])
+function call_post($name, $module, $proc, $param=[])
 {
     try
     {
@@ -103,7 +105,7 @@ function request($name, $module, $proc, $param=[])
         if(!$cfg || !$cfg[cfg::request_host] || !$cfg[cfg::request_port]) throw new Exception("There is no config.({$name})");
         if(!$module) throw new Exception("\$module is a required input.");
         if(!$proc) throw new Exception("\$proc is a required input.");
-        $url = implode('/',array( $cfg['host'].':'.$cfg['port'], 'v1', $module, $proc ));
+        $url = implode('/',array( $cfg['host'].':'.$cfg['port'], $cfg['prefix'], $module, $proc ));
 
         $ch = curl_init();
         curl_setopt_array($ch, array(
@@ -129,35 +131,43 @@ function request($name, $module, $proc, $param=[])
 }
 
 /**
+ * 외부 서비스 호출
+ *
+ * @param string $name
  * @param string $module
  * @param string $proc
- * @param array $query
- * @return bool|string
+ * @param        $file
+ *
+ * @return bool|array
  */
-function url_module($module, $proc, $query=[])
+function call_get($name, $module, $proc, $file='')
 {
-    if(!$module || !$proc) return false;
-    $http_host = cfg::Get('default','http_host');
-    $_query = [];
-    foreach ($query as $k=>$v) { $_query[] = $k.'='.$v; }
-    $_query = trim(implode('&',$_query));
-    $_query = $_query?'?'.$_query:'';
-    return  $http_host."/v1/{$module}/{$proc}{$_query}";
-}
+    try
+    {
+        $cfg = cfg::request($name);
+        if(!$cfg || !$cfg[cfg::request_host] || !$cfg[cfg::request_port]) throw new Exception("There is no config.({$name})");
+        if(!$module) throw new Exception("\$module is a required input.");
+        if(!$proc) throw new Exception("\$proc is a required input.");
+        $url = implode('/',array( $cfg['host'].':'.$cfg['port'], $cfg['prefix'], $module, $proc, $file ));
 
-/**
- * @param string $proc
- * @param array $query
- * @return string|bool
- */
-function url_proc($proc, $query=[])
-{
-    if(!$proc) return false;
-    $http_host = cfg::Get('default','http_host');
-    $module = cfg::module();
-    $_query = [];
-    foreach ($query as $k=>$v) { $_query[] = $k.'='.$v; }
-    $_query = trim(implode('&',$_query));
-    $_query = $_query?'?'.$_query:'';
-    return  $http_host."/v1/{$module}/{$proc}{$_query}";
+        $ch = curl_init();
+        curl_setopt_array($ch, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => 'GET',
+        ));
+
+        $response_body = curl_exec($ch);
+        curl_close($ch);
+        return json_decode($response_body,true);
+    }
+    catch (Exception $e)
+    {
+        rester_response::error($e->getMessage());
+        return false;
+    }
 }
