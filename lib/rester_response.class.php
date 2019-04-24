@@ -16,6 +16,13 @@ class rester_response
     const code_parameter        = '11';
     const code_config           = '12';
     const code_request_method   = '13';
+    const code_uri              = '14';
+    const code_access_ip        = '15';
+    const code_not_found        = '16';
+    const code_access_level     = '17';
+    const code_param_filter     = '18';
+    const code_param_data       = '19';
+    const code_cache_server     = '20';
     const code_etc              = '99';
 
     /**
@@ -24,10 +31,18 @@ class rester_response
     protected static $res_code_list = [
         self::code_success          =>'성공',
         self::code_require_login    =>'로그인 필요',
+        self::code_system_error     =>'시스템 오류',
         self::code_parameter        =>'호출인자 오류',
         self::code_config           =>'환경설정 오류',
         self::code_request_method   =>'호출 메서드 오류',
-        self::code_etc              =>'Etc.'
+        self::code_uri              =>'호출 URI 오류',
+        self::code_access_ip        =>'접근이 허용되지 않습니다.',
+        self::code_not_found        =>'모듈이나 프로시저를 찾을수 없습니다.',
+        self::code_access_level     =>'접근권한 오류',
+        self::code_param_filter     =>'파라미터 필터링 오류',
+        self::code_param_data       =>'파라미터 검증 오류',
+        self::code_cache_server     =>'캐쉬서버 접속오류',
+        self::code_etc              =>'기타 오류'
     ];
 
     protected static $success = true;
@@ -40,30 +55,13 @@ class rester_response
     protected static $data = false;
 
     /**
-     * 로그인 실패
-     *
-     * @param string $msg
-     */
-    public static function failed_login($msg='') { self::failed(self::code_require_login, $msg); }
-
-    /**
-     * @param string $msg
-     */
-    public static function failed_param($msg='') { self::failed(self::code_parameter, $msg); }
-
-    /**
-     * @param string $msg
-     */
-    public static function failed_custom($msg) { self::failed(self::code_etc, $msg); }
-
-    /**
      * @param string $code
      * @param string $msg
      */
     public static function failed($code, $msg='')
     {
         self::$res_code = $code;
-        self::error(self::$res_code_list[$code]);
+        self::msg(self::$res_code_list[$code]);
         if($msg) self::error($msg);
     }
 

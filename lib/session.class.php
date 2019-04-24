@@ -6,6 +6,10 @@
 class session
 {
     private static $session_id;	// 세션 아이디
+    /**
+     * @var Redis
+     */
+    private static $cache;
 
     /**
      * 토큰생성
@@ -25,6 +29,28 @@ class session
     }
 
     /**
+     * @throws Exception
+     */
+    protected static function connect_cache()
+    {
+        if(self::$cache) return;
+
+        $redis_cfg = cfg::cache();
+        if(!($redis_cfg['host'] && $redis_cfg['port']))
+            throw new Exception("Require cache config to use auth.", rester_response::code_config);
+
+        self::$cache = new Redis();
+        if(self::$cache->connect($redis_cfg['host'], $redis_cfg['port'], 1.0))
+        {
+            if ($redis_cfg['auth']) self::$cache->auth($redis_cfg['auth']);
+        }
+        else
+        {
+            throw new Exception("Can not access redis server.", rester_response::code_cache_server);
+        }
+    }
+
+    /**
      * @param string $token
      *
      * @return bool|string
@@ -32,58 +58,35 @@ class session
      */
     public static function get($token)
     {
-        $redis_cfg = cfg::cache();
-        if(!($redis_cfg['host'] && $redis_cfg['port'])) throw new Exception("Require cache config to use auth.");
-
-        $redis = new Redis();
-        if($redis->connect($redis_cfg['host'], $redis_cfg['port'], 1.0))
+        self::connect_cache();
+        if(self::$session_id = self::$cache->get('token_'.$token))
         {
-            if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
-
-            if($session_id = $redis->get('token_'.$token))
-            {
-                self::$session_id =  $session_id;
-                $redis->close();
-            }
-            else
-            {
-                $redis->close();
-                throw new Exception("Can not access interface: require login token.");
-            }
+            return self::$session_id;
         }
         else
         {
-            throw new Exception("Can not access redis server.");
+            throw new Exception("Login required!", rester_response::code_require_login);
         }
-        return $session_id;
     }
 
     /**
-     * @param string $id
+     * @param mixed $data
      *
      * @return string
      * @throws Exception
      */
-    public static function set($id)
+    public static function set($data)
     {
-        if(!$id) throw new Exception("Require first parameter(id:string)");
+        if(!$data) throw new Exception("Require first parameter.", rester_response::code_parameter);
 
+        self::connect_cache();
         $timeout = intval(cfg::Get('session','timeout'));
-        $redis_cfg = cfg::cache();
-        if(!($redis_cfg['host'] && $redis_cfg['port'])) throw new Exception("Require cache config to use auth.");
-
-        $redis = new Redis();
-        $redis->connect($redis_cfg['host'], $redis_cfg['port']);
-        if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
-
         do {
             $token = self::gen_token();
-        } while($redis->get('token_'.$token));
+        } while(self::$cache->get('token_'.$token));
 
-        $redis->set('token_'.$token,$id,$timeout);
-        $redis->close();
-
-        self::$session_id = $id;
+        self::$cache->set('token_'.$token,$data,$timeout);
+        self::$session_id = $data;
         return $token;
     }
 

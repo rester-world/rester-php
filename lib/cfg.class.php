@@ -23,7 +23,6 @@ class cfg
     const common_timezone   = 'timezone';
     const common_debug_mode = 'debug_mode';
     const common_host       = 'host';
-    const common_host_cdn   = 'cdn';
 
     const cache = 'cache';
     const cache_host    = 'host';
@@ -38,11 +37,6 @@ class cfg
     const session = 'session';
     const session_timeout = 'timeout';
 
-    const file = 'file';
-    const file_upload_path  = 'upload_path';
-    const file_extensions   = 'extensions';
-    const file_max_count    = 'max_count';
-
     const access_control = 'access_control';
     const access_control_allows_origin = 'allows_origin';
 
@@ -54,11 +48,6 @@ class cfg
         ],
         self::session=>[
             self::session_timeout=>86400
-        ],
-        self::file=>[
-            self::file_upload_path=>'rester/files',
-            self::file_extensions=>['jpg','png','jpeg','gif','svg','pdf','hwp','doc','docx','xls','xlsx','ppt','pptx','txt'],
-            self::file_max_count=>5,
         ],
         self::access_control=>[
             self::access_control_allows_origin=>'*'
@@ -115,11 +104,6 @@ class cfg
      * @return string
      */
     public static function host() { return self::$data[self::common][self::common_host]; }
-
-    /**
-     * @return string
-     */
-    public static function host_cdn() { return self::$data[self::common][self::common_host_cdn]; }
 
     /**
      * @return array
@@ -187,57 +171,11 @@ class cfg
     public static function init()
     {
         // ---------------------------------------------------------------------
-        /// Version
-        // ---------------------------------------------------------------------
-        if(preg_match('/^[0-9][0-9.]*$/i',$_GET[self::query_version],$matches))
-        {
-            self::$data[self::version] = $matches[0];
-        }
-        else
-        {
-            if($_GET[self::query_version]=='')
-                throw new Exception("Access denied.(root directory)");
-            else
-                throw new Exception("Invalid version name.");
-        }
-        unset($_GET[self::query_version]);
-
-        // ---------------------------------------------------------------------
-        /// Module name
-        // ---------------------------------------------------------------------
-        if(preg_match('/^[a-z0-9-_]*$/i',strtolower($_GET[self::query_module]),$matches))
-            self::$data[self::module] = $matches[0];
-        else
-            throw new Exception("Invalid module name.");
-        unset($_GET[self::query_module]);
-
-        // ---------------------------------------------------------------------
-        /// Procedure name
-        // ---------------------------------------------------------------------
-        if(preg_match('/^[a-z0-9-_]*$/i',strtolower($_GET[self::query_proc]),$matches))
-            self::$data[self::proc] = $matches[0];
-        else
-            throw new Exception("Invalid procedure name.");
-        unset($_GET[self::query_proc]);
-
-        // ---------------------------------------------------------------------
-        /// Check method
-        // ---------------------------------------------------------------------
-        if($_SERVER['REQUEST_METHOD']=='POST' || $_SERVER['REQUEST_METHOD']=='GET')
-        {
-            self::$data[self::method] = strtolower($_SERVER['REQUEST_METHOD']);
-        }
-        else
-        {
-            throw new Exception("Invalid request METHOD.(Allowed POST)");
-        }
-
-        // ---------------------------------------------------------------------
         /// Load config
         // ---------------------------------------------------------------------
         $path = dirname(__FILE__).'/../cfg/'.self::filename;
         if(!is_file($path))
-            throw new Exception("There is no config file.(".self::filename.")");
+            throw new Exception("There is no config file.(".self::filename.")", rester_response::code_config);
 
         $cfg = parse_ini_file($path,true, INI_SCANNER_TYPED);
 
@@ -260,13 +198,62 @@ class cfg
             }
         }
 
+        // ---------------------------------------------------------------------
+        /// Version
+        // ---------------------------------------------------------------------
+        if(preg_match('/^[0-9][0-9.]*$/i',$_GET[self::query_version],$matches))
+        {
+            self::$data[self::version] = $matches[0];
+        }
+        else
+        {
+            if($_GET[self::query_version]=='')
+                throw new Exception("Required version name.", rester_response::code_uri);
+            else
+                throw new Exception("Invalid version name.", rester_response::code_uri);
+        }
+        unset($_GET[self::query_version]);
+
+        // ---------------------------------------------------------------------
+        /// Module name
+        // ---------------------------------------------------------------------
+        if(preg_match('/^[a-z0-9-_]*$/i',strtolower($_GET[self::query_module]),$matches))
+            self::$data[self::module] = $matches[0];
+        else
+            throw new Exception("Invalid module name.", rester_response::code_uri);
+        unset($_GET[self::query_module]);
+
+        // ---------------------------------------------------------------------
+        /// Procedure name
+        // ---------------------------------------------------------------------
+        if(preg_match('/^[a-z0-9-_]*$/i',strtolower($_GET[self::query_proc]),$matches))
+            self::$data[self::proc] = $matches[0];
+        else
+            throw new Exception("Invalid procedure name.", rester_response::code_uri);
+        unset($_GET[self::query_proc]);
+
+        // ---------------------------------------------------------------------
+        /// Check method
+        // ---------------------------------------------------------------------
+        if($_SERVER['REQUEST_METHOD']=='POST' || $_SERVER['REQUEST_METHOD']=='GET')
+        {
+            self::$data[self::method] = strtolower($_SERVER['REQUEST_METHOD']);
+        }
+        else
+        {
+            throw new Exception("Invalid request METHOD.(Allowed POST)", rester_response::code_uri);
+        }
+
+        // ---------------------------------------------------------------------
+        /// Check ip
+        // ---------------------------------------------------------------------
         $allows_origin = self::allows_origin();
         if($allows_origin!='*')
         {
             $access_ip = self::access_ip();
             if(!is_array($allows_origin)) $allows_origin = [$allows_origin];
             if(!in_array($access_ip,$allows_origin))
-                throw new Exception("Access denied.(Not allowed ip address:{$access_ip})");
+                throw new Exception("Access denied.(Not allowed ip address:{$access_ip})", rester_response::code_access_ip);
         }
 
         /**
