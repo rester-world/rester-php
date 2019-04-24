@@ -62,7 +62,7 @@ class rester_config
                 foreach($this->data[self::access] as $proc => $level)
                 {
                     if( !($level==self::access_public || $level==self::access_internal || $level==self::access_private) )
-                        throw new Exception("Access level must be [public|internal|private]. ({$this->module}/{$proc})");
+                        throw new Exception("Access level must be [public|internal|private]. ({$this->module}/{$proc})", rester_response::code_config);
                 }
             }
 

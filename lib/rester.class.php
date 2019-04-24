@@ -95,7 +95,7 @@ class rester
         // 프로시저 파일 체크
         if(!$this->path_proc)
         {
-            throw new Exception("Not found procedure. Module: {$module}, Procedure: {$proc} ");
+            throw new Exception("Not found procedure. Module: {$module}, Procedure: {$proc} ", rester_response::code_not_found);
         }
 
         // create config
@@ -117,7 +117,7 @@ class rester
         {
             $redis_cfg = cfg::cache();
             if(!($redis_cfg['host'] && $redis_cfg['port']))
-                throw new Exception("Require cache config to use cache.");
+                throw new Exception("Require cache config to use cache.", rester_response::code_config);
 
             $this->redis = new Redis();
             $this->redis->connect($redis_cfg['host'], $redis_cfg['port']);
@@ -230,7 +230,7 @@ class rester
             case rester_config::access_public: $access = true; break;
         }
         if($access===false)
-            throw new Exception("Can not access procedure. [Module] {$this->module}, [Procedure] {$this->proc}, [Access level] {$ac_level} ");
+            throw new Exception("Can not access procedure. [Module] {$this->module}, [Procedure] {$this->proc}, [Access level] {$ac_level} ", rester_response::code_access_level);
         return $access;
     }
 

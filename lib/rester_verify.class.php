@@ -89,12 +89,21 @@ class rester_verify
             // 필드타입에 따라 옵션으로 필수로 받는 내용이 달라진다.
             switch ($v[self::TYPE])
             {
-                case self::TYPE_REGEX: if(!isset($v[self::TYPE_REGEX])) throw new Exception("Required parameter.[regexp]"); break;
-                case self::TYPE_FILTER: if(!isset($v[self::TYPE_FILTER])) throw new Exception("Required parameter.[filter]"); break;
+                case self::TYPE_REGEX:
+                    if(!isset($v[self::TYPE_REGEX]))
+                        throw new Exception("Required parameter.[regexp]", rester_response::code_param_filter);
+                break;
+
+                case self::TYPE_FILTER:
+                    if(!isset($v[self::TYPE_FILTER]))
+                        throw new Exception("Required parameter.[filter]", rester_response::code_param_filter);
+                break;
+
                 case self::TYPE_FUNCTION: break;
                 default:
                     $func = 'validate_' . $v['type'];
-                    if (!method_exists($this, $func)) throw new Exception("Not supported type. ({$v['type']})");
+                    if (!method_exists($this, $func))
+                        throw new Exception("Not supported type. ({$v['type']})", rester_response::code_param_filter);
             }
         }
     }
@@ -167,7 +176,8 @@ class rester_verify
         if(sizeof($data)>0)
         {
             $keys = array_keys($data);
-            if(!is_array($data) || (array_keys($keys) === $keys)) throw new Exception("Invalid parameter.(associative array)");
+            if(!is_array($data) || (array_keys($keys) === $keys))
+                throw new Exception("Invalid parameter.(associative array)", rester_response::code_parameter);
         }
 
         foreach($this->filter as $k=>$v)
@@ -198,8 +208,12 @@ class rester_verify
                         eval("\$filter = " . $schema[self::TYPE_FILTER] . ";");
                         if($schema[self::OPTIONS]) eval("\$options = " . $schema[self::OPTIONS] . ";");
 
-                        if(!is_integer($filter)) throw new Exception($k.'='.$data[$k]." : Invalid filter format.");
-                        if($options !== null && !is_integer($options)) throw new Exception($k.'='.$data[$k]." : Filter option format is invalid.");
+                        if(!is_integer($filter))
+                            throw new Exception($k.'='.$data[$k]." : Invalid filter format.", rester_response::code_param_filter);
+
+                        if($options !== null && !is_integer($options))
+                            throw new Exception($k.'='.$data[$k]." : Filter option format is invalid.", rester_response::code_param_filter);
+
                         if (false !== ($clean = filter_var($data[$k], $filter, $options))) $result = $clean;
                         break;
 
@@ -228,7 +242,7 @@ class rester_verify
                                 rester_response::warning($e->getMessage());
                             }
                         }
-                        else throw new Exception($k.'='.$data[$k]." : There is no Rester definition function.");
+                        else throw new Exception($k.'='.$data[$k]." : There is no Rester definition function.", rester_response::code_param_filter);
                 }
             }
 
@@ -236,7 +250,7 @@ class rester_verify
             $require = $v[self::REQUIRE]=='true'?true:false;
             if($require && !$result)
             {
-                throw new Exception($k." : The required input data does not have a value or pass validation.");
+                throw new Exception($k." : The required input data does not have a value or pass validation.", rester_response::code_param_data);
             }
             $this->result[$k] = $result;
         }
@@ -372,7 +386,7 @@ class rester_verify
      */
     protected function validate_token($data)
     {
-        if(preg_match('/^[0-9a-zA-Z.]+$/', $data, $matches)) return $data;
+        if(preg_match('/^[0-9a-zA-Z.!@#$%^&()-_*=+]+$/', $data, $matches)) return $data;
         throw new Exception("Invalid data(token) : {$data}");
     }
 
