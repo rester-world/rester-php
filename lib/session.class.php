@@ -61,6 +61,10 @@ class session
         self::connect_cache();
         if(self::$session_id = self::$cache->get('token_'.$token))
         {
+            if(json_decode(self::$session_id,true))
+            {
+                self::$session_id = json_decode(self::$session_id,true);
+            }
             return self::$session_id;
         }
         else
@@ -78,6 +82,7 @@ class session
     public static function set($data)
     {
         if(!$data) throw new Exception("Require first parameter.", rester_response::code_parameter);
+        if(is_array($data)) $data = json_encode($data);
 
         self::connect_cache();
         $timeout = intval(cfg::Get('session','timeout'));
