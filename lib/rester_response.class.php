@@ -23,6 +23,8 @@ class rester_response
     const code_param_filter     = '18';
     const code_param_data       = '19';
     const code_cache_server     = '20';
+    const code_response_fail    = '21';
+    const code_login_fail       = '22';
     const code_etc              = '99';
 
     /**
@@ -42,6 +44,8 @@ class rester_response
         self::code_param_filter     =>'파라미터 필터링 오류',
         self::code_param_data       =>'파라미터 검증 오류',
         self::code_cache_server     =>'캐쉬서버 접속오류',
+        self::code_response_fail    =>'외부호출 결과 실패',
+        self::code_login_fail       =>'로그인 실패',
         self::code_etc              =>'기타 오류'
     ];
 
