@@ -9,19 +9,19 @@ define('__RESTER__', TRUE);
 //-------------------------------------------------------------------------------
 /// include classes
 //-------------------------------------------------------------------------------
-require_once dirname(__FILE__).'/common.lib.php';
-require_once dirname(__FILE__).'/classes/cfg.class.php';
-require_once dirname(__FILE__).'/classes/session.class.php';
-require_once dirname(__FILE__).'/classes/file.class.php';
-require_once dirname(__FILE__).'/classes/rester_response.class.php';
-require_once dirname(__FILE__).'/classes/rester_verify.class.php';
-require_once dirname(__FILE__).'/classes/rester_config.class.php';
-require_once dirname(__FILE__).'/classes/rester.class.php';
+require_once dirname(__FILE__) . '/common.lib.php';
+require_once dirname(__FILE__) . '/cfg.class.php';
+require_once dirname(__FILE__) . '/session.class.php';
+require_once dirname(__FILE__) . '/file.class.php';
+require_once dirname(__FILE__) . '/rester_response.class.php';
+require_once dirname(__FILE__) . '/rester_verify.class.php';
+require_once dirname(__FILE__) . '/rester_config.class.php';
+require_once dirname(__FILE__) . '/rester.class.php';
 
 //-------------------------------------------------------------------------------
 /// Include lib files
 //-------------------------------------------------------------------------------
-foreach (glob(dirname(__FILE__) . '/lib/lib.*.php') as $filename)
+foreach (glob(dirname(__FILE__) . '/../exten_lib/lib.*.php') as $filename)
 {
     include_once $filename;
 }

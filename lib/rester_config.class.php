@@ -79,7 +79,7 @@ class rester_config
     protected function path_cfg($module)
     {
         $path = implode('/',array(
-            dirname(__FILE__).'/../../'.rester::path_module,
+            dirname(__FILE__).'/../'.rester::path_module,
             $module,
             self::file_name
         ));

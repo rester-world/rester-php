@@ -107,7 +107,7 @@ class rester_verify
     protected function path()
     {
         $path = implode('/',array(
-            dirname(__FILE__).'/../../'.rester::path_module,
+            dirname(__FILE__).'/../'.rester::path_module,
             $this->module,
             $this->proc,
             $this->method.'.ini'

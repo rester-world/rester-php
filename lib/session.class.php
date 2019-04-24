@@ -10,13 +10,15 @@ class session
     /**
      * 토큰생성
      *
+     * @param int $length
+     *
      * @return string token
      */
-    protected static function genToken()
+    public static function gen_token($length=40)
     {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.';
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.!@#$%^&()-_*=+';
         $token = '';
-        for ($i = 0; $i < 40; $i++) {
+        for ($i = 0; $i < $length; $i++) {
             $token .= $characters[rand(0, strlen($characters))];
         }
         return $token;
@@ -75,7 +77,7 @@ class session
         if($redis_cfg['auth']) $redis->auth($redis_cfg['auth']);
 
         do {
-            $token = self::genToken();
+            $token = self::gen_token();
         } while($redis->get('token_'.$token));
 
         $redis->set('token_'.$token,$id,$timeout);

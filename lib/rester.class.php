@@ -8,7 +8,7 @@
  */
 class rester
 {
-    const path_module = 'modules';
+    const path_module = 'src';
 
     /**
      * @var rester_config
@@ -82,7 +82,7 @@ class rester
         $this->proc = $proc;
         $this->method = $method;
 
-        $base_path = dirname(__FILE__).'/../../'.self::path_module;
+        $base_path = dirname(__FILE__).'/../'.self::path_module;
 
         // 프로시저 경로 설정
         $this->path_proc = false;

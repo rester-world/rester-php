@@ -5,7 +5,7 @@
       "URL rule error"
     ],
     "data": {
-        "rule": "http://host/v{version}/{module}/{function}",
+        "rule": "//host/v{version}/{module}/{function}",
         "online-document": "https://github.com/rester-world/rester-php/wiki",
         "copyright": "rester.io"
     }

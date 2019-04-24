@@ -15,9 +15,12 @@ services:
   links:
     - redis:cache.rester.io
   volumes:
-   - //Github/RESTer/rester-php/default.conf:/etc/nginx/sites-available/default.conf:ro
-   - //Github/RESTer/rester-php/src:/var/www/html
-   - //Github/RESTer/rester-php/cfg:/var/www/cfg:ro
+   - ./default.conf:/etc/nginx/sites-available/default.conf:ro
+   - ./default-ssl.conf:/etc/nginx/sites-available/default-ssl.conf:ro
+   - ./cfg:/var/www/cfg:ro
+   - ./lib:/var/www/lib
+   - ./exten_lib:/var/www/exten_lib
+   - ./src:/var/www/src
   ports:
    - '80:80'
    - '443:443'

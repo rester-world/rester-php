@@ -4,7 +4,7 @@ global $current_rester;
 
 try
 {
-    include_once('./rester/common.php');
+    include_once(dirname(__FILE__) . '/common.php');
     $rester = new rester(cfg::module(), cfg::proc(), cfg::method(), cfg::request_body());
     $rester->set_public_access();
     $current_rester = $rester;
