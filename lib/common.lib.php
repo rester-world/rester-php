@@ -90,6 +90,7 @@ function request_procedure($proc, $method, $query=[])
 /**
  * 외부 서비스 호출
  *
+ * @param string $method
  * @param string $name
  * @param string $module
  * @param string $proc
@@ -97,15 +98,41 @@ function request_procedure($proc, $method, $query=[])
  *
  * @return bool|array
  */
-function call_post($name, $module, $proc, $param=[])
+function exten($method, $name, $module, $proc, $param=[])
 {
+    $result = false;
+    $cfg = cfg::request($name);
+
     try
     {
-        $cfg = cfg::request($name);
-        if(!$cfg || !$cfg[cfg::request_host] || !$cfg[cfg::request_port]) throw new Exception("There is no config.({$name})");
-        if(!$module) throw new Exception("\$module is a required input.");
-        if(!$proc) throw new Exception("\$proc is a required input.");
-        $url = implode('/',array( $cfg['host'].':'.$cfg['port'], $cfg['prefix'], $module, $proc ));
+        if(!($method=='POST' || $method=='GET')) throw new Exception("Allowed \$method [POST|GET].",rester_response::code_request_method);
+        if(!$module) throw new Exception("\$module is a required input.",rester_response::code_parameter);
+        if(!$proc) throw new Exception("\$proc is a required input.",rester_response::code_parameter);
+
+        if(
+            !$cfg ||
+            !$cfg[cfg::request_host] ||
+            !$cfg[cfg::request_port] ||
+            !$cfg[cfg::request_prefix]
+        )
+            throw new Exception("There is no config.(cfg[request][{$name}])",rester_response::code_config);
+
+        $url = implode('/', [
+            $cfg[cfg::request_host].':'.$cfg[cfg::request_port],
+            $cfg[cfg::request_prefix],
+            $module,
+            $proc
+        ]);
+
+        if($method=='GET')
+        {
+            $query = [];
+            foreach($param as $key=>$value)
+            {
+                $query[] = $key.'='.$value;
+            }
+            $url .= '?'.urlencode(implode('&',$query));
+        }
 
         $ch = curl_init();
         curl_setopt_array($ch, array(
@@ -115,19 +142,20 @@ function call_post($name, $module, $proc, $param=[])
             CURLOPT_MAXREDIRS => 10,
             CURLOPT_TIMEOUT => 30,
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'POST',
-            CURLOPT_POSTFIELDS => json_encode($param),
+            CURLOPT_CUSTOMREQUEST => $method
         ));
+        if($method=='POST') curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode($param));
 
         $response_body = curl_exec($ch);
         curl_close($ch);
-        return json_decode($response_body,true);
+        $result = json_decode($response_body,true);
     }
     catch (Exception $e)
     {
-        rester_response::error($e->getMessage());
-        return false;
+        rester_response::failed($e->getCode(),$e->getMessage());
+        rester_response::error_trace(explode("\n",$e->getTraceAsString()));
     }
+    return $result;
 }
 
 /**
@@ -136,38 +164,26 @@ function call_post($name, $module, $proc, $param=[])
  * @param string $name
  * @param string $module
  * @param string $proc
- * @param        $file
+ * @param array  $param
  *
  * @return bool|array
  */
-function call_get($name, $module, $proc, $file='')
+function exten_get($name, $module, $proc, $param=[])
 {
-    try
-    {
-        $cfg = cfg::request($name);
-        if(!$cfg || !$cfg[cfg::request_host] || !$cfg[cfg::request_port]) throw new Exception("There is no config.({$name})");
-        if(!$module) throw new Exception("\$module is a required input.");
-        if(!$proc) throw new Exception("\$proc is a required input.");
-        $url = implode('/',array( $cfg['host'].':'.$cfg['port'], $cfg['prefix'], $module, $proc, $file ));
+    return exten('GET',$name,$module,$proc,$param);
+}
 
-        $ch = curl_init();
-        curl_setopt_array($ch, array(
-            CURLOPT_URL => $url,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_ENCODING => "",
-            CURLOPT_MAXREDIRS => 10,
-            CURLOPT_TIMEOUT => 30,
-            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-            CURLOPT_CUSTOMREQUEST => 'GET',
-        ));
-
-        $response_body = curl_exec($ch);
-        curl_close($ch);
-        return json_decode($response_body,true);
-    }
-    catch (Exception $e)
-    {
-        rester_response::error($e->getMessage());
-        return false;
-    }
+/**
+ * 외부 서비스 호출
+ *
+ * @param string $name
+ * @param string $module
+ * @param string $proc
+ * @param array  $param
+ *
+ * @return bool|array
+ */
+function exten_post($name, $module, $proc, $param=[])
+{
+    return exten('POST',$name,$module,$proc,$param);
 }
