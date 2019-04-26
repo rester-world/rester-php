@@ -96,6 +96,17 @@ class session
     }
 
     /**
+     * @param string $token
+     *
+     * @throws Exception
+     */
+    public static function del($token)
+    {
+        self::connect_cache();
+        self::$cache->delete('token_'.$token);
+    }
+
+    /**
      * @return string
      */
     public static function id()
