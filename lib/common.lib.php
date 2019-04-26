@@ -187,3 +187,23 @@ function exten_post($name, $module, $proc, $param=[])
 {
     return exten('POST',$name,$module,$proc,$param);
 }
+
+/**
+ * @param array|mixed $res
+ *
+ * @return array|bool|mixed
+ */
+function response_data($res)
+{
+    $data = false;
+    if($res['success'])
+    {
+        if(is_array($res['data']) && sizeof($res['data'])==1) $data = $res['data'][0];
+        else $data = $res['data'];
+    }
+    else
+    {
+        rester_response::failed(rester_response::code_response_fail, implode('/',$res['error']));
+    }
+    return $data;
+}
