@@ -80,7 +80,7 @@ class rester
         $this->is_public_access = false;
         $this->module = $module;
         $this->proc = $proc;
-        $this->method = $method;
+        $this->method = strtolower($method);
 
         $base_path = dirname(__FILE__).'/../'.self::path_module;
 
@@ -155,7 +155,14 @@ class rester
         $this->check_access_level($caller);
 
         // check auth
-        if($this->check_auth) { session::get(cfg::token()); }
+        if(cfg::token())
+        {
+            session::get_token(cfg::token());
+        }
+        if($this->check_auth && !session::id())
+        {
+            throw new Exception("Login required!", rester_response::code_require_login);
+        }
 
         $response_data = false;
 

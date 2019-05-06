@@ -144,7 +144,7 @@ function exten($method, $name, $module, $proc, $param=[])
             CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
             CURLOPT_CUSTOMREQUEST => $method
         ));
-        if($method=='POST') curl_setopt($ch,CURLOPT_POSTFIELDS, json_encode($param));
+        if($method=='POST') curl_setopt($ch,CURLOPT_POSTFIELDS, $param);
 
         $response_body = curl_exec($ch);
         curl_close($ch);
@@ -207,3 +207,49 @@ function response_data($res)
     }
     return $data;
 }
+
+/**
+ * @param string $uri
+ *
+ * @return string
+ */
+function cdn_image($uri)
+{
+    return cfg::get('file','cdn').'/rester-cdn/image/'.$uri;
+}
+
+/**
+ * @param string $uri
+ * @param int $width
+ * @param int $height
+ *
+ * @return string
+ */
+function cdn_thumb($uri,$width=0,$height=0)
+{
+    $result = cfg::get('file','cdn').'/rester-cdn/image/'.$uri.'?thumb=true';
+    if($width) $result.= '&width='.$width;
+    if($height) $result.= '&height='.$height;
+    return $result;
+}
+
+/**
+ * @param string $uri
+ *
+ * @return string
+ */
+function cdn_delete($uri)
+{
+    return cfg::get('file','cdn').'/rester-cdn/delete/'.$uri;
+}
+
+/**
+ * @param string $uri
+ *
+ * @return string
+ */
+function cdn_download($uri)
+{
+    return cfg::get('file','cdn').'/rester-cdn/download/'.$uri;
+}
+
