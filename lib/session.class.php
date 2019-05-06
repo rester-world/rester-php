@@ -56,7 +56,7 @@ class session
      * @return bool|string
      * @throws Exception
      */
-    public static function get($token)
+    public static function get_token($token)
     {
         self::connect_cache();
         if(self::$session_id = self::$cache->get('token_'.$token))
@@ -67,10 +67,6 @@ class session
             }
             return self::$session_id;
         }
-        else
-        {
-            throw new Exception("Login required!", rester_response::code_require_login);
-        }
     }
 
     /**
@@ -79,7 +75,7 @@ class session
      * @return string
      * @throws Exception
      */
-    public static function set($data)
+    public static function set_token($data)
     {
         if(!$data) throw new Exception("Require first parameter.", rester_response::code_parameter);
         if(is_array($data)) $data = json_encode($data);
@@ -96,14 +92,61 @@ class session
     }
 
     /**
+     * @param string $key
+     * @param mixed  $data
+     * @param int $timeout
+     *
+     * @throws Exception
+     */
+    public static function set($key,$data,$timeout)
+    {
+        if(!$key) throw new Exception("Require first parameter.", rester_response::code_parameter);
+        if(!$data) throw new Exception("Require second parameter.", rester_response::code_parameter);
+        if(is_array($data)) $data = json_encode($data);
+
+        self::connect_cache();
+        self::$cache->set($key,$data,$timeout);
+    }
+
+    /**
+     * @param string $key
+     *
+     * @return bool|string
+     * @throws Exception
+     */
+    public static function get($key)
+    {
+        self::connect_cache();
+        if($ret = self::$cache->get($key))
+        {
+            if(json_decode($ret,true))
+            {
+                $ret = json_decode($ret,true);
+            }
+        }
+        return $ret;
+    }
+
+    /**
      * @param string $token
      *
      * @throws Exception
      */
-    public static function del($token)
+    public static function del_token($token)
     {
         self::connect_cache();
         self::$cache->delete('token_'.$token);
+    }
+
+    /**
+     * @param string $key
+     *
+     * @throws Exception
+     */
+    public static function del($key)
+    {
+        self::connect_cache();
+        self::$cache->delete($key);
     }
 
     /**
