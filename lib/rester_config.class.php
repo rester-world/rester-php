@@ -101,8 +101,8 @@ class rester_config
     public function is_auth($proc)
     {
         $result = false;
-        if($v = $this->data[self::auth][self::auth_default]) $result = $v;
-        if($v = $this->data[self::auth][$proc]) $result = $v;
+        if(isset($this->data[self::auth][self::auth_default])) $result = $this->data[self::auth][self::auth_default];
+        if(isset($this->data[self::auth][$proc])) $result = $this->data[self::auth][$proc];
         return $result;
     }
 
