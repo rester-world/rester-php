@@ -15,8 +15,7 @@ services:
   links:
     - redis:cache.rester.io
   volumes:
-   - ./default.conf:/etc/nginx/sites-available/default.conf:ro
-   - ./default-ssl.conf:/etc/nginx/sites-available/default-ssl.conf:ro
+   - ./nginx-conf:/etc/nginx/sites-available:ro
    - ./cfg:/var/www/cfg:ro
    - ./lib:/var/www/lib
    - ./exten_lib:/var/www/exten_lib
