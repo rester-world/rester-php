@@ -6,13 +6,12 @@ global $current_rester;
 //-------------------------------------------------------------------------------
 /// include classes
 //-------------------------------------------------------------------------------
-require_once dirname(__FILE__) . '/common.lib.php';
-require_once dirname(__FILE__) . '/cfg.class.php';
-require_once dirname(__FILE__) . '/session.class.php';
-require_once dirname(__FILE__) . '/file.class.php';
-require_once dirname(__FILE__) . '/rester_response.class.php';
-require_once dirname(__FILE__) . '/rester_verify.class.php';
-require_once dirname(__FILE__) . '/rester_config.class.php';
+require_once dirname(__FILE__) . '/core/common.lib.php';
+require_once dirname(__FILE__) . '/core/cfg.class.php';
+require_once dirname(__FILE__) . '/core/session.class.php';
+require_once dirname(__FILE__) . '/core/rester_response.class.php';
+require_once dirname(__FILE__) . '/core/rester_verify.class.php';
+require_once dirname(__FILE__) . '/core/rester_config.class.php';
 require_once dirname(__FILE__) . '/rester.class.php';
 
 //-------------------------------------------------------------------------------
@@ -120,5 +119,4 @@ catch (Exception $e)
     rester_response::failed(sprintf("%02s",$e->getCode()),$e->getMessage());
     rester_response::error_trace(explode("\n",$e->getTraceAsString()));
 }
-
 rester_response::run();

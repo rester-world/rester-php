@@ -9,8 +9,8 @@ RUN mkdir /var/www/exten_lib
 ADD cfg /var/www/cfg
 ADD src /var/www/src
 ADD lib /var/www/lib
-ADD default.conf /etc/nginx/sites-available/default.conf
-ADD default-ssl.conf /etc/nginx/sites-available/default-ssl.conf
+ADD nginx-conf/default.conf /etc/nginx/sites-available/default.conf
+ADD nginx-conf/default-ssl.conf /etc/nginx/sites-available/default-ssl.conf
 
 VOLUME ["/var/www/cfg"]
 VOLUME ["/var/www/src"]
