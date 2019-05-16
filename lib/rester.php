@@ -12,7 +12,8 @@ require_once dirname(__FILE__) . '/core/session.class.php';
 require_once dirname(__FILE__) . '/core/rester_response.class.php';
 require_once dirname(__FILE__) . '/core/rester_verify.class.php';
 require_once dirname(__FILE__) . '/core/rester_config.class.php';
-require_once dirname(__FILE__) . '/rester.class.php';
+require_once dirname(__FILE__) . '/core/rester.class.php';
+require_once dirname(__FILE__) . '/resterPHP.class.php';
 
 //-------------------------------------------------------------------------------
 /// Include lib files
@@ -109,7 +110,7 @@ try
     // timezone 설정
     date_default_timezone_set(cfg::timezone());
 
-    $rester = new rester(cfg::module(), cfg::proc(), cfg::method(), cfg::request_body());
+    $rester = new resterPHP(cfg::module(), cfg::proc(), cfg::method(), cfg::request_body());
     $rester->set_public_access();
     $current_rester = $rester;
     rester_response::body($rester->run());
