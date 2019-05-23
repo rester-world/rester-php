@@ -9,7 +9,7 @@ RUN mkdir /var/www/exten_lib
 
 ADD cfg /var/www/cfg
 ADD src /var/www/src
-ADD lib /var/www/rester-php
+ADD rester-php /var/www/rester-php
 ADD rester-core /var/www/rester-core
 ADD nginx-conf/default.conf /etc/nginx/sites-available/default.conf
 ADD nginx-conf/default-ssl.conf /etc/nginx/sites-available/default-ssl.conf
