@@ -7,15 +7,8 @@ $current_rester;
 //-------------------------------------------------------------------------------
 /// include classes
 //-------------------------------------------------------------------------------
-require_once dirname(__FILE__) . '/core/cfg.class.php';
-require_once dirname(__FILE__) . '/core/session.class.php';
-require_once dirname(__FILE__) . '/core/rester_response.class.php';
-require_once dirname(__FILE__) . '/core/rester_verify.class.php';
-require_once dirname(__FILE__) . '/core/rester_config.class.php';
-require_once dirname(__FILE__) . '/core/rester.class.php';
+require_once dirname(__FILE__) . '/../rester-core/common.php';
 require_once dirname(__FILE__) . '/resterPHP.class.php';
-require_once dirname(__FILE__) . '/core/common.lib.php';
-
 
 //-------------------------------------------------------------------------------
 /// Include lib files
