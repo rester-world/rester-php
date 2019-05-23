@@ -17,7 +17,8 @@ services:
   volumes:
    - ./nginx-conf:/etc/nginx/sites-available:ro
    - ./cfg:/var/www/cfg:ro
-   - ./lib:/var/www/lib
+   - ./rester-php:/var/www/rester-php
+   - ./rester-core:/var/www/rester-core
    - ./exten_lib:/var/www/exten_lib
    - ./src:/var/www/src
   ports:

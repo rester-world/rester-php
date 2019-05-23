@@ -1,3 +1,3 @@
-[submodule "lib/core"]
-	path = lib/core
+[submodule "rester-core"]
+	path = rester-core
 	url = https://github.com/rester-world/rester-core
