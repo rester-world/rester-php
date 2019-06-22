@@ -34,6 +34,9 @@ function request_module($module, $proc, $method, $query=[])
 
     try
     {
+        if($token = request_param('token')) $query['token'] = $token;
+        if($secret = request_param('secret')) $query['secret'] = $secret;
+
         $current_rester = new resterPHP($module, $proc, $method, $query);
         $res = $current_rester->run($old_rester);
     }
