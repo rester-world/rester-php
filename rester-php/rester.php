@@ -64,6 +64,9 @@ function request_procedure($proc, $method, $query=[])
 
     try
     {
+        if($token = request_param('token')) $query['token'] = $token;
+        if($secret = request_param('secret')) $query['secret'] = $secret;
+
         $current_rester = new resterPHP($current_rester->module(), $proc, $method, $query);
         $res = $current_rester->run($old_rester);
     }
