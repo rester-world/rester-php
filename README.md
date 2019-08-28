@@ -29,8 +29,9 @@ docker-compose up -d
 ```
 
 ## Examples
-Postman 으로 작성된 예제
-https://documenter.getpostman.com/view/2641641/RW1ekHWT
+- Postman 으로 작성된 예제
+- 예제 파일로 첨부할 예정임
+- https://documenter.getpostman.com/view/2641641/RW1ekHWT
 
 ## License
 Copyright © 2018, [kevinpark](https://github.com/daium).
