@@ -20,3 +20,6 @@ VOLUME ["/var/www/rester-php"]
 VOLUME ["/var/www/rester-core"]
 VOLUME ["/var/www/exten_lib"]
 
+CMD mkdir /var/www/exten_lib/aws
+CMD cd /var/www/exten_lib/aws
+CMD composer require aws/aws-sdk-php
