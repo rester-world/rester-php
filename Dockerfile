@@ -16,6 +16,7 @@ ADD rester-core /var/www/rester-core
 ADD nginx-conf/default.conf /etc/nginx/sites-available/default.conf
 ADD nginx-conf/default-ssl.conf /etc/nginx/sites-available/default-ssl.conf
 ADD start.sh /start.sh
+RUN chmod 755 /start.sh
 
 VOLUME ["/var/www/cfg"]
 VOLUME ["/var/www/src"]
