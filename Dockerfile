@@ -6,7 +6,6 @@ RUN mkdir /var/www/src
 RUN mkdir /var/www/rester-php
 RUN mkdir /var/www/rester-core
 RUN mkdir /var/www/exten_lib
-RUN mkdir /var/www/exten_lib/aws
 
 ADD cfg /var/www/cfg
 ADD src /var/www/src

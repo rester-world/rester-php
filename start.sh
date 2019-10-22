@@ -154,6 +154,7 @@ if [[ "$ENABLE_HTTPS" == "1" ]] ; then
     fi
 fi
 
+mkdir /var/www/exten_lib/aws
 composer require aws/aws-sdk-php --working-dir=/var/www/exten_lib/aws
 
 # Start supervisord and services
