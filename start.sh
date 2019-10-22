@@ -154,8 +154,11 @@ if [[ "$ENABLE_HTTPS" == "1" ]] ; then
     fi
 fi
 
-mkdir /var/www/exten_lib/aws
-composer require aws/aws-sdk-php --working-dir=/var/www/exten_lib/aws
+if [[ "$ENABLE_AWS" == "1" ]] ; then
+  mkdir /var/www/exten_lib/aws
+  composer require aws/aws-sdk-php --working-dir=/var/www/exten_lib/aws
+fi
+
 
 # Start supervisord and services
 exec /usr/bin/supervisord -n -c /etc/supervisord.conf
